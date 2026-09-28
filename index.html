@@ -43,6 +43,86 @@
     line-height: 1.4;
   }
 
+  /* "저장된 목록" 글자를 클릭하면 뜨는 서식 안내 창(작성방법/서식내용).
+     드래그로 옮길 수 있고(헤더 부분), 오른쪽 아래 모서리를 끌어
+     크기도 조절할 수 있습니다(CSS resize). */
+  #savedPanelTitle {
+    cursor: pointer;
+  }
+
+  .help-modal {
+    display: none;
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    width: var(--saved-w);
+    height: auto;
+    min-width: 220px;
+    min-height: 120px;
+    max-width: 92vw;
+    max-height: 88vh;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+    z-index: 500;
+    flex-direction: column;
+    overflow: hidden;
+    resize: both;
+  }
+
+  .help-modal.open {
+    display: flex;
+  }
+
+  .help-modal-header {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #333;
+    color: #fff;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: move;
+    user-select: none;
+  }
+
+  .help-modal-close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 15px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 6px;
+  }
+
+  .help-modal-close:hover {
+    color: #ff8080;
+  }
+
+  .help-modal-body {
+    flex: 1 1 auto;
+    overflow: visible;
+    padding: 14px 16px;
+    font-size: 12.5px;
+    line-height: 1.7;
+    white-space: pre-line;
+    color: #222;
+  }
+
+  .help-modal-body b {
+    color: #a11;
+  }
+
+  @media print {
+    .help-modal {
+      display: none !important;
+    }
+  }
+
   .section-title {
     font-size: 13px;
     font-weight: 700;
@@ -998,7 +1078,7 @@
   .exp-no { width: 26px; }
   .exp-item { width: 148px; }
   .exp-place { width: 68px; }
-  .exp-date { width: 70px; }
+  .exp-date { width: 96px; }
   .exp-amt { width: 92px; }
 
   /* 합계 줄(별도 표)의 기본 열너비 - 위 데이터 표와 시각적으로
@@ -1130,14 +1210,6 @@
 
   .sum-row th, .sum-row td { color: var(--exp-accent) !important; }
 
-  /* 지출결의서도 세금계산서 발행 요청서처럼 제목 아래 여백을
-     주기 위한 보정입니다(세금계산서 쪽은 제목 다음에 오는
-     .section-title 때문에 자연스럽게 여백이 생기는데, 지출결의서는
-     제목 바로 다음이 표라서 그 여백만큼을 h1에 더해줍니다). */
-  #sheetExpense h1 {
-    margin-bottom: 43px;
-  }
-
   /* 글자색 변경 스와치 - 클릭하면 바로 색상 선택 창이 뜹니다 */
   .accent-color-box {
     display: flex;
@@ -1217,6 +1289,14 @@
   <button type="button" class="primary" onclick="window.print()">인쇄 / PDF저장</button>
 </div>
 <div class="save-status" id="saveStatus"></div>
+
+<div class="help-modal" id="helpModal">
+  <div class="help-modal-header" id="helpModalHeader">
+    <span id="helpModalTitle">서식 안내</span>
+    <button type="button" class="help-modal-close" id="helpModalClose">✕</button>
+  </div>
+  <div class="help-modal-body" id="helpModalBody"></div>
+</div>
 
 <div class="saved-panel">
   <div class="saved-panel-title" id="savedPanelTitle">저장된 목록 (확인 중...)</div>
@@ -1521,7 +1601,8 @@
               <tr>
                 <th class="guide-label-cell">3. 지급시기 및 방법 :</th>
                 <td class="guide-value-cell">
-                  <textarea class="left auto-grow" rows="1" data-xfield="payTiming" placeholder="예) 세금계산서 발행 후 즉시 계좌이체"></textarea>
+                  <div class="readonly-value" id="expPayTimingDateView"></div>
+                  <textarea class="left auto-grow" rows="1" data-xfield="payTiming" placeholder="예) 즉시 계좌이체"></textarea>
                 </td>
               </tr>
               <tr>
@@ -3066,6 +3147,7 @@ function bindExpenseRow(tr) {
   const previousPaid = tr.querySelector('[data-rf="previousPaid"]');
   const payItem = tr.querySelector('[data-rf="payItem"]');
   const payTo = tr.querySelector('[data-rf="payTo"]');
+  const payDate = tr.querySelector('[data-rf="payDate"]');
 
   plannedAmount.addEventListener('input', function() { recalcRowAmounts(tr); });
   previousPaid.addEventListener('input', function() { recalcRowAmounts(tr); });
@@ -3083,6 +3165,15 @@ function bindExpenseRow(tr) {
       recalcExpenseTotals();
     });
   });
+
+  // 날짜를 입력하면 칸 너비를 다시 맞추고(안 잘리도록), 아래 빨간
+  // 박스의 "지급시기 및 방법"에도 날짜가 자동으로 반영됩니다.
+  if (payDate) {
+    payDate.addEventListener('input', function() {
+      layoutExpenseColumns();
+      recalcExpenseTotals();
+    });
+  }
 }
 
 /* 행 삭제 - 화면 캡쳐 시 표 안에 삭제 버튼이 함께 찍히지 않도록,
@@ -3192,6 +3283,7 @@ function addExpenseRow(prefill) {
   autoGrow(tr.querySelector('[data-rf="payItem"]'));
   autoGrow(tr.querySelector('[data-rf="payTo"]'));
   recalcRowAmounts(tr);
+  layoutExpenseColumns();
   return tr;
 }
 
@@ -3203,6 +3295,7 @@ function recalcExpenseTotals() {
   const amounts = [];
   const infos = [];
   const details = [];
+  const dates = [];
 
   rows.forEach(function(tr) {
     const plannedEl = tr.querySelector('[data-rf="plannedAmount"]');
@@ -3211,6 +3304,7 @@ function recalcExpenseTotals() {
     const balEl = tr.querySelector('[data-rf="balance"]');
     const payToEl = tr.querySelector('[data-rf="payTo"]');
     const payItemEl = tr.querySelector('[data-rf="payItem"]');
+    const payDateEl = tr.querySelector('[data-rf="payDate"]');
 
     sumPlanned += parseNum(plannedEl.value);
     sumTotal += parseNum(totalEl.value);
@@ -3223,6 +3317,9 @@ function recalcExpenseTotals() {
     const payToVal = payToEl.value.trim();
     if (payToVal !== '' && infos.indexOf(payToVal) === -1) infos.push(payToVal);
     if (payItemEl.value.trim() !== '') details.push(payItemEl.value.trim());
+    // 날짜도 같은 값이 여러 행에 반복되면 한 번만 표시합니다.
+    const payDateVal = payDateEl ? payDateEl.value.trim() : '';
+    if (payDateVal !== '' && dates.indexOf(payDateVal) === -1) dates.push(payDateVal);
   });
 
   document.getElementById('expSumPlannedTotal').textContent = fmt(sumPlanned);
@@ -3236,6 +3333,8 @@ function recalcExpenseTotals() {
   document.getElementById('expPayAmountView').textContent = amounts.join(' / ');
   document.getElementById('expPayInfoView').textContent = buildPayInfoText(infos.join(' / '));
   document.getElementById('expPayDetailView').textContent = details.join(' / ');
+  const timingDateView = document.getElementById('expPayTimingDateView');
+  if (timingDateView) timingDateView.textContent = dates.join(' / ');
 
   syncExpenseDelButtons();
 }
@@ -3627,13 +3726,24 @@ function layoutExpenseColumns() {
 
   const fontFamily = '"Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
   const boldFont = '700 12px ' + fontFamily;
+  const normalFont = '400 12px ' + fontFamily;
   const pad = 22;
 
   function fitW(text) { return measureTextWidth(text, boldFont) + pad; }
 
   const noW = fitW('No');
   const placeW = fitW('지급처');
-  const dateW = fitW('날짜');
+
+  // 날짜 칸은 제목 글자("날짜")뿐 아니라, 실제로 들어가는 날짜값
+  // (예: 2026-09-28)이나 안내 글자(YYYY-MM-DD)에도 맞춰야 잘리지
+  // 않습니다. 그래서 헤더 글자와 각 행의 값/안내 글자 중 가장
+  // 넓은 폭을 기준으로 폭을 정합니다.
+  const dateInputs = Array.from(document.querySelectorAll('#expenseRowsBody [data-rf="payDate"]'));
+  const dateContentW = dateInputs.reduce(function(max, el) {
+    const text = (el.value && el.value.trim() !== '') ? el.value : (el.placeholder || '');
+    return Math.max(max, measureTextWidth(text, normalFont) + pad);
+  }, measureTextWidth('YYYY-MM-DD', normalFont) + pad);
+  const dateW = Math.max(fitW('날짜'), dateContentW);
   const amt1W = fitW('지급예정금액');
   const amt2W = fitW('총계약금액');
   const amt3W = fitW('이전지급액');
@@ -3819,6 +3929,7 @@ function initAppAfterUnlock() {
 
   initMainTabs();
   initExpenseTab();
+  initHelpModal();
 }
 
 function initSavedSearch() {
@@ -3831,6 +3942,94 @@ function initSavedSearch() {
     } else {
       renderExpenseSavedList();
     }
+  });
+}
+
+/* ── "저장된 목록" 글자를 클릭하면 뜨는 서식 안내 창 ─────────────
+   제목에 마우스를 올렸을 때 뜨던 방식 대신, 저장된 목록 글자를
+   클릭해야 뜨도록 바꾸고, 창은 드래그로 옮기고(헤더) 오른쪽 아래
+   모서리를 끌어 크기도 조절할 수 있습니다(CSS resize: both). */
+const HELP_CONTENT = {
+  tax:
+'[ 작성방법 ]\n' +
+'프로젝트 정보 → 공급자/공급받는자 → 계약금액 → 진행현황 → 기 발행정보 → 발행 신청 정보 순서로 빈 칸을 채워주세요. 회색 예시 글자를 참고해서 입력하면 됩니다.\n\n' +
+'[ 서식내용 ]\n' +
+'자동으로 채워지는 항목\n' +
+'· 프로젝트명 칸에 입력하면 맨 아래 "발행 신청 정보"의 품목 칸에 그대로 이어붙여 자동으로 채워집니다(품목 칸을 직접 수정하면 그 뒤로는 덮어쓰지 않습니다).\n' +
+'· "발행 신청 정보"에 공급가액/부가세를 입력하면 위쪽 "계약금액"의 공급가액/부가세에도 똑같이 반영되고, 합계는 각 표에서 자동으로 계산됩니다.\n' +
+'· 상단 "계약금액에 반영" / "계약금액과 별도" 버튼으로 이 자동 반영을 켜고 끌 수 있습니다("계약금액과 별도"를 누르면 발행 신청 정보를 입력해도 계약금액 칸은 바뀌지 않습니다).',
+
+  expense:
+'[ 작성방법 ]\n' +
+'위 표에 지급 건별로 행을 추가해 프로젝트명/지급내역·지급처·날짜·지급예정금액·이전지급액을 입력하세요. 총계약금액·잔액은 자동으로 계산됩니다. 빨간 박스 안내를 따라 지급법인·지급시기(방법)·지급정보(은행/계좌번호)·증빙도 채워주세요.\n\n' +
+'[ 서식내용 ]\n' +
+'위 표 → 빨간 박스로 자동 채워지는 항목\n' +
+'· 2. 지급금액 : 각 행의 지급예정금액이 자동으로 모여서 표시됩니다.\n' +
+'· 3. 지급시기 및 방법(날짜) : 각 행에 입력한 날짜가 자동으로 표시됩니다.\n' +
+'· 4. 지급정보(예금주) : 각 행의 지급처가 중복 없이 자동으로 표시됩니다(결제은행/계좌번호는 왼쪽 "지급 결제정보" 칸에 직접 입력).\n' +
+'· 5. 지급상세내용 : 각 행의 프로젝트명/지급내역이 자동으로 모여서 표시됩니다.\n' +
+'· 합계 줄 : 지급예정금액 합계와, 그 금액을 부가세 포함 금액으로 보고 계산한 공급가액/부가세가 자동으로 채워집니다.\n\n' +
+'빨간 박스에서 직접 입력해야 하는 항목\n' +
+'· 1. 지급법인, 3.의 "방법"(예: 즉시 계좌이체), 4.의 결제은행/계좌번호(왼쪽 지급 결제정보 칸), 6. 증빙\n\n' +
+'화면 캡쳐 시 안 보이도록 숨겨진 기능\n' +
+'· 표 위에 마우스를 올리면 "+행 추가"와 글자색 변경 버튼이 나타납니다(평소에는 캡쳐에 찍히지 않도록 숨겨져 있습니다).\n' +
+'· 각 행의 오른쪽 바깥쪽에 마우스를 올리면 그 행을 지우는 ✕ 버튼이 나타납니다.\n' +
+'· 오른쪽 "메모/사진" 칸을 클릭한 뒤 Ctrl+V로 사진을 붙여넣거나, 파일첨부 버튼으로 파일을 첨부할 수 있습니다.'
+};
+
+function openHelpModal() {
+  const modal = document.getElementById('helpModal');
+  const title = document.getElementById('helpModalTitle');
+  const body = document.getElementById('helpModalBody');
+  if (!modal || !body) return;
+  title.textContent = currentTab === 'expense' ? '지출결의서 안내' : '세금계산서 발행 요청서 안내';
+  body.textContent = HELP_CONTENT[currentTab] || HELP_CONTENT.tax;
+  modal.classList.add('open');
+}
+
+function closeHelpModal() {
+  const modal = document.getElementById('helpModal');
+  if (modal) modal.classList.remove('open');
+}
+
+function initHelpModal() {
+  const panelTitle = document.getElementById('savedPanelTitle');
+  const modal = document.getElementById('helpModal');
+  const header = document.getElementById('helpModalHeader');
+  const closeBtn = document.getElementById('helpModalClose');
+  if (panelTitle) panelTitle.addEventListener('click', openHelpModal);
+  if (closeBtn) closeBtn.addEventListener('click', closeHelpModal);
+
+  if (!modal || !header) return;
+
+  let dragging = false;
+  let startX = 0, startY = 0, startLeft = 0, startTop = 0;
+
+  header.addEventListener('mousedown', function(e) {
+    if (e.target === closeBtn) return;
+    dragging = true;
+    const rect = modal.getBoundingClientRect();
+    // 드래그를 시작하는 순간 transform 기준 배치를 top/left 고정 배치로 바꿔줍니다.
+    modal.style.left = rect.left + 'px';
+    modal.style.top = rect.top + 'px';
+    modal.style.transform = 'none';
+    startX = e.clientX;
+    startY = e.clientY;
+    startLeft = rect.left;
+    startTop = rect.top;
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    modal.style.left = (startLeft + dx) + 'px';
+    modal.style.top = (startTop + dy) + 'px';
+  });
+
+  document.addEventListener('mouseup', function() {
+    dragging = false;
   });
 }
 
