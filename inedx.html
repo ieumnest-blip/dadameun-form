@@ -1,0 +1,3943 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>(매출) 세금계산서 발행 요청서</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%93%91</text></svg>">
+<style>
+  @font-face {
+    font-family: 'Cafe24Ssukssuk';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@master/Cafe24Ssukssuk.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
+  * { box-sizing: border-box; }
+
+  :root {
+    --saved-w: 300px;
+    --upload-w: 480px;
+  }
+
+  body {
+    font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    background: #fff;
+    margin: 0;
+    padding: 24px calc(var(--upload-w) + 42px) 20px calc(var(--saved-w) + 42px);
+    color: #111;
+  }
+
+  .sheet {
+    width: 725px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 54px 0 14px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 18px;
+    color: #111;
+    line-height: 1.4;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    margin: 13px 0 7px;
+    line-height: 1.4;
+    color: #111;
+  }
+
+  .section-title.prior-title { color: #0000ff; }
+  .section-title.request { color: #ff0000; }
+
+  .section-title .sub {
+    font-weight: 700;
+    color: inherit;
+    font-size: 13px;
+  }
+
+  /* 발행 신청 정보 - 계약금액 연동 여부를 고르는 탭 (저장할 이름 입력칸 아래) */
+  .request-sync-tabs {
+    display: inline-flex;
+    gap: 4px;
+  }
+
+  .request-sync-tab {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    color: #888;
+    background: #f2f2f2;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .request-sync-tab:hover {
+    background: #e6e6e6;
+  }
+
+  .request-sync-tab.active {
+    color: #fff;
+    background: #ff0000;
+    border-color: #ff0000;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  .info th,
+  .info td {
+    border: 1px solid #222;
+    padding: 0;
+    font-size: 12px;
+    text-align: center;
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
+  }
+
+  .info th {
+    font-weight: 700;
+    background: #fff;
+    height: 39px;
+    line-height: 1.25;
+  }
+
+  .info td {
+    min-height: 39px;
+    line-height: 1.35;
+  }
+
+  .label-col {
+    width: 143px;
+    font-weight: 700;
+    background: #fff;
+  }
+
+  input[type="text"],
+  input[type="date"],
+  textarea {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    text-align: center;
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1.4;
+    padding: 9px 6px;
+    margin: 0;
+    outline: none;
+    resize: none;
+    overflow: hidden;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  textarea {
+    min-height: 39px;
+  }
+
+  input[type="text"].left,
+  textarea.left {
+    text-align: left;
+    padding-left: 9px;
+  }
+
+  input:focus,
+  textarea:focus {
+    background: #fffbe0;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #777;
+    opacity: 1;
+  }
+
+  /* 3분할 / 2분할 입력 (프로젝트명, 상호)
+     - 각 입력칸은 내용 길이에 맞춰 자동으로 폭이 조정되어 줄바꿈이 생기지 않습니다.
+     - 칸 사이 구분선은 화면/인쇄 모두에서 보이지 않습니다. */
+  .split-row {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1px;
+    padding: 0 5px;
+    overflow: hidden;
+  }
+
+  .split-row.centered {
+    justify-content: center;
+  }
+
+  .split-row input[type="text"] {
+    display: inline-block;
+    width: auto;
+    flex: 0 0 auto;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 9px 1px;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  /* 프로젝트 정보 - 공급자/수신메일 쪽(c4,c5)은 최소한으로,
+     프로젝트명/상호 쪽(c2,c3)은 넉넉하게 배분 */
+  .project-table col.c1 { width: 143px; }
+  .project-table col.c2 { width: 232px; }
+  .project-table col.c3 { width: 155px; }
+  .project-table col.c4 { width: 100px; }
+  .project-table col.c5 { width: 95px; }
+
+  /* 첫 줄(프로젝트명/공급자)은 아래 줄(상호/사업자번호/수신메일)과
+     열을 맞출 필요 없이 독립적으로 폭이 정해집니다. */
+  .row1-table col.r1c1 { width: 143px; }
+  .row1-table col.r1c2 { width: 300px; }
+  .row1-table col.r1c3 { width: 100px; }
+  .row1-table col.r1c4 { width: 182px; }
+
+  /* 진행현황 표도 위 줄과 열을 맞출 필요 없이 독립적으로 폭이 정해집니다. */
+  .progress-inner-table col.p1 { width: 143px; }
+  .progress-inner-table col.p2 { width: 146px; }
+  .progress-inner-table col.p3 { width: 146px; }
+  .progress-inner-table col.p4 { width: 146px; }
+  .progress-inner-table col.p5 { width: 144px; }
+
+  .contract-table col.ct1 { width: 143px; }
+  .contract-table col.ct2 { width: 146px; }
+  .contract-table col.ct3 { width: 146px; }
+  .contract-table col.ct4 { width: 146px; }
+  .contract-table col.ct5 { width: 144px; }
+
+  .request-table col.rq1 { width: 102px; }
+  .request-table col.rq2 { width: 267px; }
+  .request-table col.rq3 { width: 152px; }
+  .request-table col.rq4 { width: 102px; }
+  .request-table col.rq5 { width: 102px; }
+
+  .project-table .project-name {
+    text-align: left;
+    padding-left: 9px;
+  }
+
+  .project-table .supplier-label {
+    width: 143px;
+  }
+
+  .project-table .recipient-label {
+    width: 143px;
+  }
+
+  .project-table .amount-header th {
+    height: 39px;
+  }
+
+  .project-table .amount-value td {
+    min-height: 39px;
+  }
+
+  /* 금액 입력 */
+  .amount-row input[data-role="supply"],
+  .amount-row input[data-role="vat"],
+  .amount-row input[data-role="total"] {
+    text-align: center;
+  }
+
+  .request-amt input {
+    color: #7030a0;
+    font-weight: 700;
+  }
+
+  /* 진행현황 */
+  .progress-inner-table th {
+    height: 39px;
+  }
+
+  th.editable-label {
+    cursor: text;
+    outline: none;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.25;
+  }
+
+  th.editable-label:hover {
+    background: #fffbe0;
+  }
+
+  th.editable-label:focus {
+    background: #fffbe0;
+    box-shadow: inset 0 0 0 1px #7030a0;
+  }
+
+  .progress-inner-table td {
+    height: 39px;
+  }
+
+  .check-cell {
+    text-align: center;
+  }
+
+  .check-cell input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    margin: 0 auto;
+    cursor: pointer;
+    accent-color: #111;
+  }
+
+  /* 기 발행정보 */
+  .prior-box {
+    position: relative;
+    border: 2px solid #0000ff;
+    padding: 0;
+  }
+
+  .prior-box .info th,
+  .prior-box .info td {
+    border-color: #222;
+  }
+
+  .prior-box .info th {
+    height: 39px;
+  }
+
+  .prior-box .info td {
+    min-height: 39px;
+  }
+
+  /* 발행 신청 정보 */
+  .request-box {
+    border: 2px solid #ff0000;
+    padding: 0;
+  }
+
+  .request-box .info th,
+  .request-box .info td {
+    border-color: #222;
+  }
+
+  .request-box .info th {
+    height: 39px;
+  }
+
+  .request-box .info td {
+    min-height: 60px;
+  }
+
+  .request-box .item-cell textarea {
+    min-height: 60px;
+  }
+
+  .request-box .payment-row th {
+    height: 39px;
+  }
+
+  .request-box .payment-row td {
+    min-height: 39px;
+  }
+
+  .toolbar {
+    width: 725px;
+    margin: 0 auto 8px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    justify-content: flex-end;
+    font-family: 'Cafe24Ssukssuk', "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  }
+
+  .toolbar button {
+    font-family: inherit;
+    font-size: 16px;
+    padding: 7px 16px;
+    border-radius: 3px;
+    border: 1px solid #999;
+    background: #fff;
+    cursor: pointer;
+  }
+
+  .save-name-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    flex: 0 1 auto;
+  }
+
+  .save-name-input {
+    width: 310px;
+    font-family: inherit;
+    font-size: 16px;
+    padding: 7px 12px;
+    border-radius: 3px;
+    border: 1px solid #999;
+    outline: none;
+  }
+
+  .save-name-input:focus {
+    background: #fffbe0;
+  }
+
+  .save-memo-input {
+    width: 310px;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 5px 12px;
+    border-radius: 3px;
+    border: 1px solid #ccc;
+    outline: none;
+    color: #555;
+  }
+
+  .save-memo-input:focus {
+    background: #fffbe0;
+  }
+
+  .toolbar button.primary {
+    background: #4472c4;
+    color: #fff;
+    border-color: #4472c4;
+  }
+
+  .toolbar button.save {
+    background: #2e7d32;
+    color: #fff;
+    border-color: #2e7d32;
+  }
+
+  .save-status {
+    width: 725px;
+    margin: 2px auto 6px;
+    text-align: right;
+    font-size: 14px;
+    color: #777;
+    min-height: 18px;
+  }
+
+  .saved-panel {
+    position: fixed;
+    top: 64px;
+    left: 22px;
+    width: var(--saved-w);
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+    background: #fff;
+    border: none;
+    font-size: 18px;
+    font-family: 'Cafe24Ssukssuk', "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  }
+
+  .resize-handle {
+    position: fixed;
+    top: 64px;
+    height: calc(100vh - 90px);
+    width: 10px;
+    cursor: col-resize;
+    z-index: 500;
+    background: transparent;
+  }
+
+  .resize-handle:hover,
+  .resize-handle.dragging {
+    background: rgba(68, 114, 196, 0.25);
+  }
+
+  .resize-handle-left {
+    left: calc(22px + var(--saved-w) - 5px);
+  }
+
+  .resize-handle-right {
+    right: calc(22px + var(--upload-w) - 5px);
+  }
+
+  /* 모든 표 공통 - 칸 경계마다 놓이는 마우스 드래그 손잡이 */
+  .col-resize-wrap {
+    position: relative;
+  }
+
+  .generic-col-resize-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 10px;
+    margin-left: -5px;
+    cursor: col-resize;
+    z-index: 6;
+    background: transparent;
+  }
+
+  .generic-col-resize-handle:hover,
+  .generic-col-resize-handle.dragging {
+    background: rgba(68, 114, 196, 0.3);
+  }
+
+  @media print {
+    .generic-col-resize-handle {
+      display: none;
+    }
+  }
+
+  .saved-panel-title {
+    padding: 0 4px 8px;
+    font-weight: 700;
+    color: #999;
+    font-size: 16.5px;
+  }
+
+  input[type="text"].saved-search-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+    font-family: inherit;
+    font-size: 18px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    outline: none;
+  }
+
+  input[type="text"].saved-search-input::placeholder {
+    font-size: 18px;
+  }
+
+  input[type="text"].saved-search-input:focus {
+    border-color: #4472c4;
+    background: #fbfdff;
+  }
+
+  .saved-empty {
+    color: #ccc;
+    padding: 3px 4px;
+  }
+
+  .saved-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .saved-item-btn {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 5px;
+    font-size: 18px;
+    color: #333;
+    font-family: inherit;
+    line-height: 1.3;
+  }
+
+  .saved-item-btn .saved-item-label {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .saved-item-btn:hover {
+    color: #4472c4;
+  }
+
+  .saved-item-btn .saved-item-time {
+    display: block;
+    color: #bbb;
+    font-size: 15px;
+    margin-top: 2px;
+  }
+
+  .saved-item-btn .saved-item-memo {
+    display: inline-block;
+    color: #ffe600;
+    background: #000;
+    font-family: 'Cafe24Ssukssuk', "Malgun Gothic", sans-serif;
+    font-size: 18px;
+    font-style: normal;
+    font-weight: 400;
+    letter-spacing: 0.3px;
+    margin-top: 5px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    line-height: 1.5;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .saved-item-edit {
+    background: none;
+    border: none;
+    color: #bbb;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 5px 3px;
+  }
+
+  .saved-item-edit:hover {
+    color: #4472c4;
+  }
+
+  .saved-item-editform {
+    width: 100%;
+    padding: 8px 6px;
+    box-sizing: border-box;
+  }
+
+  .saved-item-editform input[type="text"],
+  .saved-item-editform textarea {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 16px;
+    padding: 5px 7px;
+    margin-bottom: 6px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    resize: vertical;
+  }
+
+  .saved-item-editform textarea {
+    min-height: 44px;
+  }
+
+  .saved-item-editform .editform-buttons {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+
+  .saved-item-editform button {
+    font-family: inherit;
+    font-size: 14px;
+    padding: 4px 12px;
+    border-radius: 3px;
+    border: 1px solid #999;
+    background: #fff;
+    cursor: pointer;
+  }
+
+  .saved-item-editform button.save {
+    background: #2e7d32;
+    color: #fff;
+    border-color: #2e7d32;
+  }
+
+  .saved-item-del {
+    background: none;
+    border: none;
+    color: #ccc;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 5px 4px;
+  }
+
+  .saved-item-del:hover {
+    color: #c0392b;
+  }
+
+  .upload-panel {
+    position: fixed;
+    top: 64px;
+    right: 22px;
+    width: var(--upload-w);
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+    background: #fff;
+    border: none;
+    font-size: 13px;
+    font-family: 'Cafe24Ssukssuk', "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  }
+
+  .upload-btn {
+    display: inline-block;
+    padding: 6px 14px;
+    border: 1px solid #999;
+    border-radius: 3px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+
+  .bank-account-box {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 10px;
+    margin-bottom: 12px;
+    background: #fafafa;
+  }
+
+  .bank-account-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #7030a0;
+    margin-bottom: 6px;
+  }
+
+  .bank-account-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 5px;
+  }
+
+  .bank-account-row:last-child { margin-bottom: 0; }
+
+  .bank-account-label {
+    flex: 0 0 56px;
+    font-size: 12px;
+    color: #555;
+  }
+
+  .bank-account-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: inherit;
+    font-size: 12px;
+    padding: 5px 7px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    outline: none;
+  }
+
+  .bank-account-input:focus {
+    background: #fffbe0;
+    border-color: #4472c4;
+  }
+
+  .upload-btn:hover {
+    background: #f0f0f0;
+  }
+
+  /* 파일선택(OS 다이얼로그) 대신 붙여넣기로 사진을 넣는 메모칸 -
+     환경에 따라 파일 선택 창이 뜨지 않는 경우가 있어, 클립보드
+     붙여넣기(Ctrl+V)만으로 사진을 첨부할 수 있게 합니다. */
+  .paste-memo-box {
+    min-height: 70px;
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px dashed #999;
+    border-radius: 4px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #333;
+    outline: none;
+    white-space: pre-wrap;
+    word-break: break-word;
+    cursor: text;
+  }
+
+  .paste-memo-box:focus {
+    background: #fffbe0;
+    border-color: #4472c4;
+  }
+
+  .paste-memo-box:empty::before {
+    content: attr(data-placeholder);
+    color: #999;
+  }
+
+  .upload-item {
+    margin-bottom: 10px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 6px;
+    position: relative;
+  }
+
+  .upload-item img {
+    width: 100%;
+    max-height: 750px;
+    object-fit: contain;
+    border-radius: 3px;
+    display: block;
+    cursor: zoom-in;
+    background: #f5f5f5;
+  }
+
+  .upload-filename {
+    font-size: 11px;
+    color: #777;
+    margin-top: 4px;
+    word-break: break-all;
+    line-height: 1.3;
+  }
+
+  .upload-pdf-frame {
+    width: 100%;
+    height: calc(100vh - 220px);
+    min-height: 500px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    display: block;
+  }
+
+  .upload-pdf-link {
+    display: block;
+    margin-top: 4px;
+    text-align: center;
+    color: #4472c4;
+    text-decoration: none;
+    font-size: 11px;
+  }
+
+  .upload-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    line-height: 1;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  @media (max-width: 1700px) {
+    body {
+      padding: 24px 16px 20px;
+    }
+
+    .saved-panel {
+      position: static;
+      width: 725px;
+      margin: 0 auto 10px;
+      max-height: 150px;
+    }
+
+    .upload-panel {
+      position: static;
+      width: 725px;
+      margin: 0 auto 10px;
+      max-height: 200px;
+    }
+
+    .resize-handle {
+      display: none;
+    }
+  }
+
+  @media print {
+    @page {
+      size: A4 portrait;
+      margin: 12mm 6mm 8mm 6mm;
+    }
+
+    body {
+      background: #fff;
+      padding: 0;
+    }
+
+    .toolbar,
+    .save-status,
+    .saved-panel,
+    .upload-panel,
+    .resize-handle,
+    .col-resize-handle,
+    .request-sync-tabs {
+      display: none;
+    }
+
+    .sheet {
+      width: 100%;
+      padding: 0;
+    }
+
+    input:focus,
+    textarea:focus {
+      background: transparent;
+    }
+
+    th.editable-label:focus,
+    th.editable-label:hover {
+      background: #fff;
+      box-shadow: none;
+    }
+  }
+
+  /* ── 비밀번호 잠금 화면 ─────────────────────────────────────── */
+  #pwGate {
+    position: fixed;
+    inset: 0;
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+
+  #pwGate .pw-box {
+    width: 280px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 28px 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    text-align: center;
+  }
+
+  #pwGate .pw-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #111;
+  }
+
+  #pwGate input[type="password"] {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 14px;
+    text-align: center;
+    padding: 9px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    outline: none;
+    margin-bottom: 10px;
+  }
+
+  #pwGate input[type="password"]:focus {
+    border-color: #4472c4;
+  }
+
+  #pwGate button {
+    width: 100%;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 9px 10px;
+    border-radius: 4px;
+    border: none;
+    background: #4472c4;
+    color: #fff;
+    cursor: pointer;
+  }
+
+  #pwGate .pw-error {
+    color: #c0392b;
+    font-size: 12px;
+    min-height: 16px;
+    margin-top: 8px;
+  }
+
+  #pwGate.unlocked {
+    display: none;
+  }
+
+  body.pw-locked #appRoot {
+    display: none;
+  }
+
+  @media print {
+    #pwGate {
+      display: none;
+    }
+  }
+
+  /* ── 상단 탭 (세금계산서 발행 요청서 / 지출결의서) ──────────────── */
+  .main-tabs {
+    width: 725px;
+    margin: 0 auto 14px;
+    display: flex;
+    gap: 6px;
+  }
+
+  .main-tab {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    color: #888;
+    background: #f2f2f2;
+    border: 1px solid #ccc;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    padding: 9px 18px;
+    cursor: pointer;
+  }
+
+  .main-tab:hover {
+    background: #e6e6e6;
+  }
+
+  .main-tab.active {
+    color: #fff;
+    background: #4472c4;
+    border-color: #4472c4;
+  }
+
+  /* ── 지출결의서 표 ────────────────────────────────────────────── */
+  .exp-no { width: 26px; }
+  .exp-item { width: 148px; }
+  .exp-place { width: 68px; }
+  .exp-date { width: 70px; }
+  .exp-amt { width: 92px; }
+
+  /* 합계 줄(별도 표)의 기본 열너비 - 위 데이터 표와 시각적으로
+     맞춰 두되, JS가 로드되면 실제 폭에 맞춰 다시 계산합니다. */
+  .es-label { width: 312px; }
+  .es-val1 { width: 184px; }
+  .es-val2 { width: 184px; }
+
+  /* 행 삭제 버튼 - 화면을 그대로 캡쳐해서 쓰는 경우가 많아, 표 안에
+     넣지 않고 표 오른쪽 바깥에 각 행 높이에 맞춰 따로 띄워둡니다
+     (syncExpenseDelButtons가 위치를 계산합니다). */
+  .expense-del-rail {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    margin-left: 6px;
+    width: 22px;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .row-del-btn {
+    position: absolute;
+    left: 0;
+    transform: translateY(-50%);
+    border: none;
+    background: none;
+    color: #ccc;
+    cursor: pointer;
+    font-size: 15px;
+    padding: 4px;
+    pointer-events: auto;
+    opacity: 0;
+    transition: opacity .12s;
+  }
+
+  /* 평소(캡쳐할 때)에는 안 보이다가, 해당 행에 마우스를 올렸을 때만
+     나타납니다. */
+  .row-del-btn.row-del-btn-visible {
+    opacity: 1;
+  }
+
+  .row-del-btn:hover { color: #c0392b; }
+
+  .expense-toolbar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    opacity: 0;
+    transition: opacity .12s;
+  }
+
+  /* 평소(캡쳐할 때)에는 안 보이다가, 이 영역에 마우스를 올리거나
+     글자색 선택칸에 포커스가 있을 때만 나타납니다. */
+  .expense-toolbar-row:hover,
+  .expense-toolbar-row:focus-within {
+    opacity: 1;
+  }
+
+  .expense-toolbar-row .accent-color-box {
+    margin-bottom: 0;
+  }
+
+  .add-row-btn {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 6px 16px;
+    border-radius: 3px;
+    border: 1px dashed #888;
+    background: #fafafa;
+    cursor: pointer;
+    color: #444;
+  }
+
+  .add-row-btn:hover {
+    background: #eef2fb;
+    border-color: #4472c4;
+    color: #4472c4;
+  }
+
+  /* [ 프로젝트명 / 지급내역 기재 ] 안내/입력 박스
+     - 나머지 표와 똑같이 진짜 <table>로 만들어서(border-collapse)
+       줄마다 테두리 두께가 흐트러지지 않고 항상 1px로 고르게
+       나오도록 했습니다. */
+  :root {
+    --exp-accent: #7030a0;
+  }
+
+  .guide-box {
+    border: 2px solid #ff0000;
+  }
+
+  .guide-box table.guide-table {
+    table-layout: fixed;
+  }
+
+  .guide-title-cell {
+    font-size: 13px !important;
+    font-weight: 700;
+    color: #111 !important;
+    text-align: left !important;
+    background: #fff;
+    height: auto !important;
+    padding: 8px 10px !important;
+  }
+
+  .guide-label-cell {
+    text-align: left !important;
+    padding: 9px 10px !important;
+    font-weight: 700;
+    background: #fff;
+    line-height: 1.4;
+  }
+
+  .guide-value-cell {
+    text-align: left !important;
+    padding: 0 !important;
+  }
+
+  .readonly-value {
+    padding: 9px 9px;
+    color: var(--exp-accent);
+    font-weight: 700;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    line-height: 1.4;
+  }
+
+  .sum-row th, .sum-row td { color: var(--exp-accent) !important; }
+
+  /* 지출결의서도 세금계산서 발행 요청서처럼 제목 아래 여백을
+     주기 위한 보정입니다(세금계산서 쪽은 제목 다음에 오는
+     .section-title 때문에 자연스럽게 여백이 생기는데, 지출결의서는
+     제목 바로 다음이 표라서 그 여백만큼을 h1에 더해줍니다). */
+  #sheetExpense h1 {
+    margin-bottom: 43px;
+  }
+
+  /* 글자색 변경 스와치 - 클릭하면 바로 색상 선택 창이 뜹니다 */
+  .accent-color-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #555;
+    margin-bottom: 10px;
+  }
+
+  .accent-color-box input[type="color"] {
+    width: 30px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    cursor: pointer;
+    background: none;
+  }
+
+  .sum-row th, .sum-row td {
+    height: 39px;
+    font-weight: 700;
+  }
+
+  /* 합계 줄은 별도 표(#expenseSumTable)로 분리되어 있어서, 위쪽
+     지출결의서 데이터 표와는 테두리만 맞닿아 있을 뿐 서로 열너비가
+     연동되지 않습니다(합계 줄 크기 조절이 위 데이터 표에 영향을
+     주지 않습니다). */
+  .expense-sum-table {
+    margin-top: 0;
+  }
+
+  .tab-hidden {
+    display: none !important;
+  }
+
+  @media print {
+    .main-tabs,
+    .expense-toolbar-row,
+    .expense-del-rail {
+      display: none;
+    }
+  }
+
+</style>
+</head>
+
+<body class="pw-locked">
+
+<div id="pwGate">
+  <div class="pw-box">
+    <div class="pw-title">🔒 비밀번호를 입력하세요</div>
+    <input type="password" id="pwInput" inputmode="numeric" autocomplete="off" placeholder="비밀번호">
+    <button type="button" id="pwSubmit">확인</button>
+    <div class="pw-error" id="pwError"></div>
+  </div>
+</div>
+
+<div id="appRoot">
+
+<div class="resize-handle resize-handle-left" id="savedResizeHandle" title="드래그해서 저장된 목록 너비를 조절하세요"></div>
+<div class="resize-handle resize-handle-right" id="uploadResizeHandle" title="드래그해서 첨부파일 미리보기 너비를 조절하세요"></div>
+
+<div class="toolbar">
+  <div class="save-name-group">
+    <input type="text" id="saveNameInput" class="save-name-input" placeholder="저장할 이름 (비워두면 프로젝트명 사용)">
+    <input type="text" id="saveMemoInput" class="save-memo-input" placeholder="메모 (선택사항)">
+    <span class="request-sync-tabs">
+      <input type="hidden" data-field="requestSyncMode" id="requestSyncMode" value="sync">
+      <button type="button" class="request-sync-tab active" data-mode="sync">계약금액에 반영</button>
+      <button type="button" class="request-sync-tab" data-mode="separate">계약금액과 별도</button>
+    </span>
+  </div>
+  <button type="button" class="save" onclick="saveCurrent()">저장</button>
+  <button type="button" onclick="resetCurrent()">초기화</button>
+  <button type="button" class="primary" onclick="window.print()">인쇄 / PDF저장</button>
+</div>
+<div class="save-status" id="saveStatus"></div>
+
+<div class="saved-panel">
+  <div class="saved-panel-title" id="savedPanelTitle">저장된 목록 (확인 중...)</div>
+  <input type="text" id="savedSearchInput" class="saved-search-input" placeholder="🔍 검색 (이름/메모)">
+  <div id="savedList"><div class="saved-empty">저장된 항목이 없습니다.</div></div>
+</div>
+
+<div class="upload-panel">
+  <div class="saved-panel-title">첨부파일 (미리보기)</div>
+
+  <div class="bank-account-box tab-hidden" id="expenseBankBox">
+    <div class="bank-account-title">지급 결제정보 (지출결의서)</div>
+    <div class="bank-account-row">
+      <span class="bank-account-label">결제은행</span>
+      <input type="text" id="payBankInput" data-xfield="payBank" class="bank-account-input" placeholder="예) 국민은행">
+    </div>
+    <div class="bank-account-row">
+      <span class="bank-account-label">계좌번호</span>
+      <input type="text" id="payAccountInput" data-xfield="payAccount" class="bank-account-input" placeholder="예) 123-456-789012">
+    </div>
+  </div>
+
+  <label class="upload-btn" for="fileUploadInput">파일 선택</label>
+  <input type="file" id="fileUploadInput" accept="image/*,.pdf" multiple style="display:none;">
+
+  <div class="paste-memo-box" id="pasteMemoBox" contenteditable="true"
+       data-placeholder="여기를 클릭한 뒤 Ctrl+V로 사진을 붙여넣으세요 (메모도 적을 수 있어요)"></div>
+  <div id="uploadList"><div class="saved-empty">첨부된 파일이 없습니다.</div></div>
+</div>
+
+<div class="main-tabs" id="mainTabs">
+  <button type="button" class="main-tab active" data-tab="tax">세금계산서 발행 요청서</button>
+  <button type="button" class="main-tab" data-tab="expense">지출결의서</button>
+</div>
+
+<div class="sheet" id="sheetTax">
+
+  <h1>(매출) 세금계산서 발행 요청서</h1>
+
+  <div class="section-title">[  프로젝트 정보  ]</div>
+
+  <table class="info project-table">
+    <colgroup>
+      <col class="c1">
+      <col class="c2">
+      <col class="c3">
+      <col class="c4">
+      <col class="c5">
+    </colgroup>
+
+    <tr>
+      <td colspan="5" style="padding:0; border:none;">
+        <table class="info row1-table">
+          <colgroup>
+            <col class="r1c1">
+            <col class="r1c2">
+            <col class="r1c3">
+            <col class="r1c4">
+          </colgroup>
+          <tr>
+            <th class="label-col">프로젝트명</th>
+            <td>
+              <div class="split-row" data-split-group="projectName">
+                <input type="text" data-field="projectName1" placeholder="예) 2026년 건물지원사업">
+                <input type="text" data-field="projectName2" placeholder="비앤디솔루션">
+                <input type="text" data-field="projectEquip" placeholder="태양광설비">
+                <input type="text" data-field="projectCapacity" placeholder="199.95kW">
+                <input type="text" data-field="projectName3" placeholder="설치공사">
+              </div>
+            </td>
+            <th class="supplier-label">공급자(계약법인)</th>
+            <td>
+              <textarea class="auto-grow" rows="1" data-field="supplierName">(주)에타솔라</textarea>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr>
+      <th class="recipient-label" rowspan="2">공급받는자</th>
+      <th>상호</th>
+      <th>사업자번호</th>
+      <th colspan="2">수신메일</th>
+    </tr>
+
+    <tr>
+      <td>
+        <div class="split-row" data-split-group="recipientName">
+          <input type="text" data-field="recipientName1" placeholder="예) 비앤디솔루션">
+          <input type="text" data-field="recipientName2" placeholder="태양광발전소">
+        </div>
+      </td>
+      <td>
+        <textarea class="auto-grow" rows="1" data-field="bizNumber"
+          placeholder="예) 531-81-01012"></textarea>
+      </td>
+      <td colspan="2">
+        <textarea class="left auto-grow" rows="1" data-field="email"
+          placeholder="예) bndsol2@bndsol.com"></textarea>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="5" style="padding:0; border:none; position:relative;">
+        <table class="info amount-row contract-table" data-row="contract">
+          <colgroup>
+            <col class="ct1">
+            <col class="ct2">
+            <col class="ct3">
+            <col class="ct4">
+            <col class="ct5">
+          </colgroup>
+          <tr class="amount-header">
+            <th class="label-col" rowspan="2">계약금액</th>
+            <th>공급가액</th>
+            <th>부가세</th>
+            <th>합 계</th>
+            <th>비 고</th>
+          </tr>
+          <tr class="amount-value">
+            <td><input type="text" data-role="supply" data-field="contractSupply" placeholder="0"></td>
+            <td><input type="text" data-role="vat" data-field="contractVat" placeholder="0"></td>
+            <td><input type="text" data-role="total" data-field="contractTotal" placeholder="0" readonly></td>
+            <td><textarea class="left auto-grow" rows="1" data-role="remark" data-field="contractRemark"></textarea></td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr>
+      <td colspan="5" style="padding:0; border:none; position:relative;">
+        <table class="info progress-inner-table">
+          <colgroup>
+            <col class="p1">
+            <col class="p2">
+            <col class="p3">
+            <col class="p4">
+            <col class="p5">
+          </colgroup>
+          <tr>
+            <th class="label-col editable-label" contenteditable="true" spellcheck="false" rowspan="2" data-field="progressLabelStatus">진행현황</th>
+            <th class="editable-label" contenteditable="true" spellcheck="false" data-field="progressLabelPre">착공전(계약금)</th>
+            <th class="editable-label" contenteditable="true" spellcheck="false" data-field="progressLabelMid">기성중(기성금)</th>
+            <th class="editable-label" contenteditable="true" spellcheck="false" data-field="progressLabelDone">준공(준공금)</th>
+            <th class="editable-label" contenteditable="true" spellcheck="false" data-field="progressLabelDate">준공일</th>
+          </tr>
+          <tr>
+            <td class="check-cell"><input type="checkbox" name="progress" data-field="progress1" checked></td>
+            <td class="check-cell"><input type="checkbox" name="progress" data-field="progress2"></td>
+            <td class="check-cell"><input type="checkbox" name="progress" data-field="progress3"></td>
+            <td><input type="text" data-field="completionDate" placeholder="YY.MM.DD"></td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <div class="section-title prior-title">
+    [  기 발행정보  ] <span class="sub">/ 이전 발행 내역합산</span>
+  </div>
+
+  <div class="prior-box">
+    <table class="info amount-row prior-table" data-row="prior">
+      <colgroup>
+        <col class="pr1">
+        <col class="pr2">
+        <col class="pr3">
+        <col class="pr4">
+        <col class="pr5">
+      </colgroup>
+      <tr>
+        <th class="label-col editable-label" contenteditable="true" spellcheck="false" rowspan="2" data-field="priorLabel">기발행금액</th>
+        <th>공급가액</th>
+        <th>부가세</th>
+        <th>합 계</th>
+        <th>비 고</th>
+      </tr>
+      <tr>
+        <td><input type="text" data-role="supply" data-field="priorSupply" placeholder="0"></td>
+        <td><input type="text" data-role="vat" data-field="priorVat" placeholder="0"></td>
+        <td><input type="text" data-role="total" data-field="priorTotal" placeholder="0" readonly></td>
+        <td>
+          <textarea class="left auto-grow" rows="1" data-role="remark" data-field="priorRemark"
+            placeholder="예) 세금계산서 발행 완료"></textarea>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section-title request">[  발행 신청 정보  ]</div>
+
+  <div class="request-box" style="position: relative;">
+    <table class="info request-table">
+      <colgroup>
+        <col class="rq1">
+        <col class="rq2">
+        <col class="rq3">
+        <col class="rq4">
+        <col class="rq5">
+      </colgroup>
+      <tr>
+        <th>발행일</th>
+        <th>품 목</th>
+        <th>공급가액</th>
+        <th>부가세</th>
+        <th>합 계</th>
+      </tr>
+
+      <tr class="amount-row" data-row="request">
+        <td class="request-amt">
+          <input type="text" data-field="requestDate" placeholder="YY.MM.DD">
+        </td>
+        <td class="request-amt item-cell">
+          <textarea class="left auto-grow" rows="2" data-field="requestItem"
+            placeholder="예) 2026년 건물지원사업_(주)비앤디솔루션 태양광설비 199.95kW 설치공사"></textarea>
+        </td>
+        <td class="request-amt">
+          <input type="text" data-role="supply" data-field="requestSupply" placeholder="0">
+        </td>
+        <td class="request-amt">
+          <input type="text" data-role="vat" data-field="requestVat" placeholder="0">
+        </td>
+        <td class="request-amt">
+          <input type="text" data-role="total" data-field="requestTotal" placeholder="0" readonly>
+        </td>
+      </tr>
+
+      <tr class="payment-row">
+        <th class="label-col">입금예정일</th>
+        <td colspan="4">
+          <textarea class="left auto-grow" rows="1" data-field="paymentDate"
+            placeholder="예) 세금계산서 발행되면 입금해주기로 함"></textarea>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+</div>
+
+<div class="sheet tab-hidden" id="sheetExpense">
+
+  <h1>지출결의서</h1>
+
+  <div class="expense-toolbar-row">
+    <button type="button" class="add-row-btn" id="addExpenseRowBtn">+ 행 추가</button>
+    <span class="accent-color-box">
+      글자색
+      <input type="color" id="expAccentColorInput" value="#7030a0" title="강조 글자색 변경">
+    </span>
+  </div>
+
+  <table class="info" id="expenseTable">
+    <colgroup>
+      <col class="exp-no">
+      <col class="exp-item">
+      <col class="exp-place">
+      <col class="exp-date">
+      <col class="exp-amt exp-amt1">
+      <col class="exp-amt exp-amt2">
+      <col class="exp-amt exp-amt3">
+      <col class="exp-amt exp-amt4">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>No</th>
+        <th>프로젝트명 / 지급내역</th>
+        <th>지급처</th>
+        <th>날짜</th>
+        <th>지급예정금액</th>
+        <th>총계약금액</th>
+        <th>이전지급액</th>
+        <th>잔 액</th>
+      </tr>
+    </thead>
+    <tbody id="expenseRowsBody">
+    </tbody>
+    <tbody>
+      <tr>
+        <td colspan="8" style="padding:0;">
+          <div class="guide-box">
+            <table class="info guide-table">
+              <colgroup>
+                <col style="width: 260px;">
+                <col style="width: auto;">
+              </colgroup>
+              <tr>
+                <th colspan="2" class="guide-title-cell">[ 프로젝트명 / 지급내역 기재 ]</th>
+              </tr>
+              <tr>
+                <th class="guide-label-cell">1. 지급법인(에타솔라/탑솔라/spc기재) :</th>
+                <td class="guide-value-cell">
+                  <input type="text" class="left" data-xfield="payCorp" placeholder="예) 에타솔라">
+                </td>
+              </tr>
+              <tr>
+                <th class="guide-label-cell">2. 지급금액 :</th>
+                <td class="guide-value-cell">
+                  <div class="readonly-value" id="expPayAmountView"></div>
+                </td>
+              </tr>
+              <tr>
+                <th class="guide-label-cell">3. 지급시기 및 방법 :</th>
+                <td class="guide-value-cell">
+                  <textarea class="left auto-grow" rows="1" data-xfield="payTiming" placeholder="예) 세금계산서 발행 후 즉시 계좌이체"></textarea>
+                </td>
+              </tr>
+              <tr>
+                <th class="guide-label-cell">4. 지급정보(결제은행/계좌번호/예금주 기재) :</th>
+                <td class="guide-value-cell">
+                  <div class="readonly-value" id="expPayInfoView"></div>
+                </td>
+              </tr>
+              <tr>
+                <th class="guide-label-cell">5. 지급상세내용 :</th>
+                <td class="guide-value-cell">
+                  <div class="readonly-value" id="expPayDetailView"></div>
+                </td>
+              </tr>
+              <tr>
+                <th class="guide-label-cell">6. 증빙(세금계산서 등 첨부서류기재) :</th>
+                <td class="guide-value-cell">
+                  <textarea class="left auto-grow" rows="1" data-xfield="payProof" placeholder="예) 세금계산서 1매 첨부"></textarea>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="info expense-sum-table" id="expenseSumTable">
+    <colgroup>
+      <col class="es-label">
+      <col class="es-val1">
+      <col class="es-val2">
+    </colgroup>
+    <tbody>
+      <tr class="sum-row">
+        <th>합&nbsp;&nbsp;&nbsp;계</th>
+        <td id="expSumPlannedTotal">0</td>
+        <td id="expSumSupplyVat">0 / 0</td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>
+
+</div><!-- /#appRoot -->
+
+<script type="module">
+  /* ── Firebase Firestore 연결 (저장 목록을 모든 PC에서 실시간 공유) ──
+     아래 firebaseConfig 자리에 Firebase 콘솔 → 프로젝트 설정 → "내 앱"
+     에서 복사한 값을 붙여넣으세요. apiKey가 "YOUR_API_KEY"로 남아있는
+     동안에는 공유가 꺼진 상태로 동작하고(이 기기에만 저장), 값을
+     채워 넣으면 자동으로 켜집니다. */
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+  import {
+    getFirestore, doc, onSnapshot, runTransaction
+  } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
+  /* ▼▼▼ 여기에 Firebase 설정값을 붙여넣으세요 ▼▼▼ */
+  const firebaseConfig = {
+    apiKey: "AIzaSyAyqTgnkeuNLmhLdDD6QY6aHrZyMde6exo",
+    authDomain: "invoice-tax-d9f9e.firebaseapp.com",
+    projectId: "invoice-tax-d9f9e",
+    storageBucket: "invoice-tax-d9f9e.firebasestorage.app",
+    messagingSenderId: "763719263944",
+    appId: "1:763719263944:web:9b134ed1becc7f85a0e7fd"
+  };
+  /* ▲▲▲ 여기까지 ▲▲▲ */
+
+  // Firestore 보안 규칙에서 "쓰기" 권한을 확인할 때 쓰는 값입니다.
+  // 페이지 비밀번호와 같은 값(9466)으로 맞춰두면 관리하기 편합니다.
+  const WRITE_SECRET = '3111';
+
+  const configured = !!(firebaseConfig.apiKey && firebaseConfig.apiKey !== 'YOUR_API_KEY');
+
+  let db = null;
+  let docRef = null;
+
+  /* 세금계산서 저장 목록은 이 문서의 "items" 필드, 지출결의서 저장
+     목록은 같은 문서의 "expenseItems" 필드에 각각 저장합니다. 같은
+     문서를 쓰기 때문에 한쪽을 수정해도 다른쪽 필드는 그대로
+     보존됩니다(트랜잭션 안에서 기존 문서 내용을 읽어와 덮어씀). */
+  function makeBridge(fieldName) {
+    const b = {
+      configured: configured,
+      currentList: [],
+      listeners: [],
+      onChange: function(cb) {
+        b.listeners.push(cb);
+        cb(b.currentList);
+      },
+      mutateList: async function(mutateFn) {
+        if (!configured) throw new Error('firebase_not_configured');
+        let resultList;
+        await runTransaction(db, async function(tx) {
+          const snap = await tx.get(docRef);
+          const existing = snap.exists() ? snap.data() : {};
+          const current = Array.isArray(existing[fieldName]) ? existing[fieldName] : [];
+          resultList = mutateFn(current);
+          const next = Object.assign({}, existing, {
+            secret: WRITE_SECRET,
+            updatedAt: Date.now()
+          });
+          next[fieldName] = resultList;
+          tx.set(docRef, next);
+        });
+        return resultList;
+      }
+    };
+    return b;
+  }
+
+  const bridge = makeBridge('items');
+  const expenseBridge = makeBridge('expenseItems');
+  window.__firestoreBridge = bridge;
+  window.__expenseFirestoreBridge = expenseBridge;
+
+  if (configured) {
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    docRef = doc(db, 'taxInvoiceApp', 'savedList');
+
+    onSnapshot(docRef, function(snap) {
+      const data = snap.exists() ? snap.data() : {};
+      const items = Array.isArray(data.items) ? data.items : [];
+      bridge.currentList = items;
+      bridge.listeners.forEach(function(cb) { cb(items); });
+
+      const expenseItems = Array.isArray(data.expenseItems) ? data.expenseItems : [];
+      expenseBridge.currentList = expenseItems;
+      expenseBridge.listeners.forEach(function(cb) { cb(expenseItems); });
+    }, function(err) {
+      console.error('Firestore 연결 오류:', err);
+    });
+  }
+</script>
+
+<script>
+/* ── 비밀번호 잠금 ────────────────────────────────────────────
+   비밀번호 원문 대신 SHA-256 해시만 코드에 넣어둡니다. 어느 정도
+   가벼운 접근 제한 용도이며, 브라우저 개발자 도구로 소스를 보면
+   알아낼 수 있는 수준이라는 점을 감안해주세요. 매번 열 때마다
+   다시 묻도록, 잠금 해제 여부는 저장해두지 않습니다. */
+const PW_HASH = '6ef3867147c600f4b7ff7b2e00d0468f6e3b33a1aa2b834bfacbe5bec47e1828';
+
+async function sha256Hex(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(function(b) {
+    return b.toString(16).padStart(2, '0');
+  }).join('');
+}
+
+function unlockApp() {
+  document.body.classList.remove('pw-locked');
+  const gate = document.getElementById('pwGate');
+  if (gate) gate.classList.add('unlocked');
+
+  /* 잠금 화면이 떠 있는 동안(#appRoot가 display:none)에는 폭 계산
+     함수들이 전부 0으로 측정되어, 그 값이 그대로 각 칸의 인라인
+     스타일로 굳어버립니다(한 번 잘못 측정되면 나중에 다시 재보여도
+     계속 그 값을 읽어와 표가 찌그러진 채로 남습니다). 그래서 이런
+     계산은 잠금 해제로 내용이 실제로 화면에 보이게 된 다음에만,
+     즉 initAppAfterUnlock()을 통해서만 실행합니다. */
+  requestAnimationFrame(function() {
+    initAppAfterUnlock();
+  });
+}
+
+async function tryUnlock(password) {
+  const errorEl = document.getElementById('pwError');
+  const hash = await sha256Hex(password || '');
+  if (hash === PW_HASH) {
+    if (errorEl) errorEl.textContent = '';
+    unlockApp();
+    return true;
+  }
+  if (errorEl) errorEl.textContent = '비밀번호가 올바르지 않습니다.';
+  return false;
+}
+
+function initPasswordGate() {
+  const input = document.getElementById('pwInput');
+  const submit = document.getElementById('pwSubmit');
+  if (!input || !submit) return;
+
+  submit.addEventListener('click', function() { tryUnlock(input.value); });
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') tryUnlock(input.value);
+  });
+  input.focus();
+}
+
+const STORAGE_LIST_KEY = 'taxInvoiceRequestForm_etasolar_list_v1';
+
+function parseNum(str) {
+  const n = parseInt(String(str).replace(/[^0-9-]/g, ''), 10);
+  return isNaN(n) ? 0 : n;
+}
+
+function fmt(n) {
+  return n.toLocaleString('ko-KR');
+}
+
+/* ── 자동 줄높이 (일반 textarea) ─────────────────────────────── */
+function autoGrow(el) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = Math.max(el.scrollHeight, 39) + 'px';
+}
+
+function autoGrowAll() {
+  document.querySelectorAll('textarea').forEach(autoGrow);
+}
+
+function initAutoGrow() {
+  document.querySelectorAll('textarea').forEach(function(el) {
+    autoGrow(el);
+    el.addEventListener('input', function() { autoGrow(el); });
+    el.addEventListener('change', function() { autoGrow(el); });
+  });
+}
+
+/* ── 분할 입력칸(프로젝트명/상호) 자동 폭 조정 ───────────────────
+   내용 길이에 맞춰 각 입력칸 폭을 자동으로 조절해서 줄바꿈이 생기지
+   않도록 하고, 한 줄에 다 들어가지 않을 정도로 길어지면 글씨 크기를
+   조금씩 줄여서(축소) 맞춥니다. */
+const measureCanvas = document.createElement('canvas');
+const measureCtx = measureCanvas.getContext('2d');
+
+function measureTextWidth(text, font) {
+  measureCtx.font = font;
+  return measureCtx.measureText(text || '').width;
+}
+
+function layoutSplitRow(row) {
+  if (!row) return;
+  const inputs = Array.from(row.querySelectorAll('input[type="text"]'));
+  if (!inputs.length) return;
+
+  const gap = 1;
+  const available = Math.max(row.clientWidth - 10, 40); // 좌우 여백 감안
+  let fontSize = 12;
+
+  function computeWidths() {
+    return inputs.map(function(inp) {
+      const text = inp.value || inp.placeholder || '';
+      const font = fontSize + 'px ' + getComputedStyle(inp).fontFamily;
+      return Math.max(measureTextWidth(text, font) + 5, 14);
+    });
+  }
+
+  inputs.forEach(function(inp) { inp.style.fontSize = fontSize + 'px'; });
+  let widths = computeWidths();
+  let total = widths.reduce(function(a, b) { return a + b; }, 0) + gap * (inputs.length - 1);
+
+  while (total > available && fontSize > 9) {
+    fontSize -= 0.5;
+    inputs.forEach(function(inp) { inp.style.fontSize = fontSize + 'px'; });
+    widths = computeWidths();
+    total = widths.reduce(function(a, b) { return a + b; }, 0) + gap * (inputs.length - 1);
+  }
+
+  inputs.forEach(function(inp, i) { inp.style.width = widths[i] + 'px'; });
+}
+
+function layoutAllSplitRows() {
+  document.querySelectorAll('.split-row').forEach(layoutSplitRow);
+}
+
+/* ── 상호가 모두 입력되면 가운데 정렬 ─────────────────────────── */
+function updateRecipientAlignment() {
+  const row = document.querySelector('.split-row[data-split-group="recipientName"]');
+  if (!row) return;
+  const inputs = Array.from(row.querySelectorAll('input[type="text"]'));
+  const allFilled = inputs.length > 0 && inputs.every(function(inp) { return inp.value.trim() !== ''; });
+  row.classList.toggle('centered', allFilled);
+}
+
+/* ── 프로젝트 정보 표 - 2번째 줄(상호/사업자번호/수신메일)
+   열너비 자동 조정. 진행현황 표는 별도 표로 분리되어 더 이상
+   이 줄과 열을 맞출 필요가 없습니다. */
+function layoutProjectColumns() {
+  const table = document.querySelector('.project-table');
+  if (!table) return;
+
+  if (isManualTable('project')) {
+    applyManualColWidths(table, 'project');
+    attachResizeHandles(table, 'project');
+    return;
+  }
+
+  const colgroup = table.querySelector('colgroup');
+  if (!colgroup) return;
+
+  const c1 = colgroup.querySelector('.c1');
+  const c2 = colgroup.querySelector('.c2');
+  const c3 = colgroup.querySelector('.c3');
+  const c4 = colgroup.querySelector('.c4');
+  const c5 = colgroup.querySelector('.c5');
+  if (!c1 || !c2 || !c3 || !c4 || !c5) return;
+
+  const fontFamily = '"Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
+  const boldFont = '700 12px ' + fontFamily;
+  const normalFont = '12px ' + fontFamily;
+  const pad = 22; // 좌우 여백 + 커서 공간
+
+  const bizNumberEl = document.querySelector('[data-field="bizNumber"]');
+  const emailEl = document.querySelector('[data-field="email"]');
+
+  const c1w = 143;
+
+  const minC4C5 = measureTextWidth('수신메일', boldFont) + pad;
+  let c4w = Math.round(minC4C5 / 2);
+  let c5w = minC4C5 - c4w;
+
+  // 수신메일은 c4+c5를 합친 영역이므로, 부족하면 c5쪽에 더해줍니다.
+  const emailText = emailEl ? (emailEl.value || emailEl.placeholder || '') : '';
+  const emailNeeded = measureTextWidth(emailText, normalFont) + pad;
+  if (emailNeeded > c4w + c5w) {
+    c5w += (emailNeeded - (c4w + c5w));
+  }
+
+  const c3w = Math.max(
+    measureTextWidth('기성중(기성금)', boldFont),
+    measureTextWidth('사업자번호', boldFont),
+    measureTextWidth(bizNumberEl ? (bizNumberEl.value || bizNumberEl.placeholder || '') : '', normalFont)
+  ) + pad;
+
+  const minC2 = measureTextWidth('상호', boldFont) + pad;
+
+  const totalWidth = 725;
+  const remaining = totalWidth - c1w - c3w - c4w - c5w;
+  const c2w = Math.max(remaining, minC2);
+
+  c1.style.width = c1w + 'px';
+  c2.style.width = c2w + 'px';
+  c3.style.width = c3w + 'px';
+  c4.style.width = c4w + 'px';
+  c5.style.width = c5w + 'px';
+
+  attachResizeHandles(table, 'project');
+}
+
+/* ── 1번째 줄(프로젝트명/공급자) 열너비 자동 조정 ─────────────────
+   아래 줄과 열을 맞출 필요가 없으므로 독립적으로 계산합니다.
+   공급자(계약법인) 이름이 길어지면 그 칸만 자동으로 늘어납니다. */
+function layoutRow1Columns() {
+  const table = document.querySelector('.row1-table');
+  if (!table) return;
+
+  if (isManualTable('row1')) {
+    applyManualColWidths(table, 'row1');
+    attachResizeHandles(table, 'row1');
+    return;
+  }
+
+  const colgroup = table.querySelector('colgroup');
+  if (!colgroup) return;
+
+  const c1 = colgroup.querySelector('.r1c1');
+  const c2 = colgroup.querySelector('.r1c2');
+  const c3 = colgroup.querySelector('.r1c3');
+  const c4 = colgroup.querySelector('.r1c4');
+  if (!c1 || !c2 || !c3 || !c4) return;
+
+  const fontFamily = '"Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
+  const boldFont = '700 12px ' + fontFamily;
+  const normalFont = '12px ' + fontFamily;
+  const pad = 22;
+
+  const supplierEl = document.querySelector('[data-field="supplierName"]');
+
+  const c1w = 143;
+  const c3w = measureTextWidth('공급자(계약법인)', boldFont) + pad;
+  const supplierText = supplierEl ? (supplierEl.value || supplierEl.placeholder || '') : '';
+  const c4w = Math.max(measureTextWidth(supplierText, normalFont) + pad, 80);
+
+  const totalWidth = 725;
+  const minC2 = 150; // 프로젝트명 최소 폭
+  const c2w = Math.max(totalWidth - c1w - c3w - c4w, minC2);
+
+  c1.style.width = c1w + 'px';
+  c2.style.width = c2w + 'px';
+  c3.style.width = c3w + 'px';
+  c4.style.width = c4w + 'px';
+
+  attachResizeHandles(table, 'row1');
+}
+
+/* ── 모든 표: 마우스로 열 너비 조정 ───────────────────────────────
+   각 표의 칸 경계마다 드래그 손잡이를 만들어서 마우스로 폭을 조절할
+   수 있게 합니다. 한 번이라도 끌어서 조정한 표는 "수동" 모드로
+   전환되어(이 브라우저에 기억됨) 그 뒤로는 글자 길이에 따라 자동으로
+   폭을 다시 계산하는 기능이 그 표에서는 동작하지 않습니다. */
+const TABLE_COL_WIDTHS_KEY = 'taxInvoiceRequestForm_allColWidths_v1';
+let allTableColWidths = {};
+
+function loadAllTableColWidths() {
+  try {
+    allTableColWidths = JSON.parse(localStorage.getItem(TABLE_COL_WIDTHS_KEY) || '{}');
+  } catch (e) {
+    allTableColWidths = {};
+  }
+}
+
+function saveAllTableColWidths() {
+  try {
+    localStorage.setItem(TABLE_COL_WIDTHS_KEY, JSON.stringify(allTableColWidths));
+  } catch (e) {}
+}
+
+function isManualTable(key) {
+  return Array.isArray(allTableColWidths[key]) && allTableColWidths[key].length > 0;
+}
+
+function applyManualColWidths(table, key) {
+  const widths = allTableColWidths[key];
+  const cols = table.querySelectorAll(':scope > colgroup > col');
+  if (!widths || !cols.length || widths.length !== cols.length) return false;
+  cols.forEach(function(col, i) { col.style.width = widths[i] + 'px'; });
+  return true;
+}
+
+/* table: 대상 표(자신의 colgroup을 가지고 있어야 함), key: 이 표를
+   구분하는 이름(저장할 때 사용). 표를 감쌀 위치 기준 컨테이너가
+   없으면 새로 만들어서 감싸고, 칸 경계마다 손잡이를 겹쳐 놓습니다. */
+function attachResizeHandles(table, key, onChange) {
+  if (!table) return;
+  const cols = Array.from(table.querySelectorAll(':scope > colgroup > col'));
+  if (cols.length < 2) return;
+
+  let wrap = table.parentElement;
+  if (!wrap || !wrap.classList.contains('col-resize-wrap')) {
+    wrap = document.createElement('div');
+    wrap.className = 'col-resize-wrap';
+    table.parentNode.insertBefore(wrap, table);
+    wrap.appendChild(table);
+  }
+
+  if (!wrap._resizeHandles) {
+    wrap._resizeHandles = [];
+    for (let i = 0; i < cols.length - 1; i++) {
+      const h = document.createElement('div');
+      h.className = 'generic-col-resize-handle';
+      h.title = '드래그해서 칸 너비를 조절하세요';
+      wrap.appendChild(h);
+      wrap._resizeHandles.push(h);
+      bindResizeHandle(h, table, cols, i, key, onChange);
+    }
+  }
+
+  positionResizeHandles(table, cols, wrap._resizeHandles);
+}
+
+function colWidthsPx(cols) {
+  return cols.map(function(c) { return c.getBoundingClientRect().width; });
+}
+
+function positionResizeHandles(table, cols, handles) {
+  const widths = colWidthsPx(cols);
+  let acc = 0;
+  handles.forEach(function(h, i) {
+    acc += widths[i];
+    h.style.left = acc + 'px';
+  });
+}
+
+function bindResizeHandle(handle, table, cols, idx, key, onChange) {
+  const minWidth = 24;
+
+  handle.addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const widths = colWidthsPx(cols);
+    const startLeftW = widths[idx];
+    const startRightW = widths[idx + 1];
+    handle.classList.add('dragging');
+    document.body.style.userSelect = 'none';
+
+    function onMove(ev) {
+      const dx = ev.clientX - startX;
+      let newLeft = startLeftW + dx;
+      let newRight = startRightW - dx;
+      if (newLeft < minWidth) { newRight -= (minWidth - newLeft); newLeft = minWidth; }
+      if (newRight < minWidth) { newLeft -= (minWidth - newRight); newRight = minWidth; }
+      cols[idx].style.width = newLeft + 'px';
+      cols[idx + 1].style.width = newRight + 'px';
+      const wrap = table.parentElement;
+      positionResizeHandles(table, cols, wrap._resizeHandles);
+    }
+
+    function onUp() {
+      handle.classList.remove('dragging');
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      allTableColWidths[key] = colWidthsPx(cols);
+      saveAllTableColWidths();
+      if (onChange) onChange();
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
+/* ── 진행현황 표 열너비 조정 ───────────────────────────────────
+   위쪽 줄(상호/사업자번호/수신메일)과 열을 맞출 필요가 없으므로
+   독립적으로 계산합니다. 나머지 4칸(착공전/기성중/준공/준공일)은
+   서로 같은 폭으로 나눕니다. */
+function layoutProgressColumns() {
+  const table = document.querySelector('.progress-inner-table');
+  if (!table) return;
+
+  if (isManualTable('progress')) {
+    applyManualColWidths(table, 'progress');
+    attachResizeHandles(table, 'progress');
+    return;
+  }
+
+  const colgroup = table.querySelector('colgroup');
+  if (!colgroup) return;
+
+  const p1 = colgroup.querySelector('.p1');
+  const p2 = colgroup.querySelector('.p2');
+  const p3 = colgroup.querySelector('.p3');
+  const p4 = colgroup.querySelector('.p4');
+  const p5 = colgroup.querySelector('.p5');
+  if (!p1 || !p2 || !p3 || !p4 || !p5) return;
+
+  const fontFamily = '"Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
+  const boldFont = '700 12px ' + fontFamily;
+  const pad = 22;
+
+  // 표를 실제로 담고 있는 칸(td)의 실제 폭을 그대로 씁니다.
+  // 725처럼 고정된 값을 쓰면 테두리 박스 두께 등으로 실제 폭과
+  // 살짝 어긋나 표가 테두리 밖으로 삐져나오는 문제가 생깁니다.
+  const totalWidth = table.parentElement.clientWidth || 725;
+
+  const labelEl = document.querySelector('[data-field="progressLabelStatus"]');
+  const labelText = labelEl ? (labelEl.textContent || '') : '진행현황';
+  const p1w = measureTextWidth(labelText, boldFont) + pad;
+
+  const eachW = (totalWidth - p1w) / 4;
+
+  p1.style.width = p1w + 'px';
+  p2.style.width = eachW + 'px';
+  p3.style.width = eachW + 'px';
+  p4.style.width = eachW + 'px';
+  p5.style.width = eachW + 'px';
+
+  attachResizeHandles(table, 'progress');
+}
+
+/* ── 기 발행정보 표 열너비 조정 ─────────────────────────────────
+   나머지 4칸(공급가액/부가세/합계/비고)은 서로 같은 폭으로 나눕니다. */
+function layoutPriorColumns() {
+  const table = document.querySelector('.prior-table');
+  if (!table) return;
+
+  if (isManualTable('prior')) {
+    applyManualColWidths(table, 'prior');
+    attachResizeHandles(table, 'prior');
+    return;
+  }
+
+  const colgroup = table.querySelector('colgroup');
+  if (!colgroup) return;
+
+  const pr1 = colgroup.querySelector('.pr1');
+  const pr2 = colgroup.querySelector('.pr2');
+  const pr3 = colgroup.querySelector('.pr3');
+  const pr4 = colgroup.querySelector('.pr4');
+  const pr5 = colgroup.querySelector('.pr5');
+  if (!pr1 || !pr2 || !pr3 || !pr4 || !pr5) return;
+
+  const fontFamily = '"Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
+  const boldFont = '700 12px ' + fontFamily;
+  const pad = 22;
+
+  // .prior-box(파란 테두리 박스)의 실제 안쪽 폭을 그대로 씁니다.
+  // 725처럼 고정된 값을 쓰면 테두리 두께만큼 어긋나 표가 파란
+  // 테두리 밖으로 삐져나오는 문제가 생깁니다.
+  const totalWidth = table.parentElement.clientWidth || 725;
+
+  const labelEl = document.querySelector('[data-field="priorLabel"]');
+  const labelText = labelEl ? (labelEl.textContent || '') : '기발행금액';
+  const pr1w = measureTextWidth(labelText, boldFont) + pad;
+
+  const eachW = (totalWidth - pr1w) / 4;
+
+  pr1.style.width = pr1w + 'px';
+  pr2.style.width = eachW + 'px';
+  pr3.style.width = eachW + 'px';
+  pr4.style.width = eachW + 'px';
+  pr5.style.width = eachW + 'px';
+
+  attachResizeHandles(table, 'prior');
+}
+
+/* ── 계약금액 표 열너비 조정 (수동 조정값이 있으면 그대로 적용) ──── */
+function layoutContractColumns() {
+  const table = document.querySelector('.contract-table');
+  if (!table) return;
+  if (!isManualTable('contract')) {
+    // 저장된 값이 없으면 CSS 기본값(.contract-table col.ct*)을 그대로 둡니다.
+  } else {
+    applyManualColWidths(table, 'contract');
+  }
+  attachResizeHandles(table, 'contract');
+}
+
+/* ── 발행 신청 정보 표 열너비를 바로 위 기 발행정보 표와 맞춤 ─────
+   품목의 오른쪽 선이 기발행정보의 공급가액 오른쪽 선과 맞도록,
+   그 뒤 공급가액/부가세/합계는 기발행정보의 부가세/합계/비고
+   폭과 각각 같아지도록 실제 렌더링된 폭을 측정해서 맞춥니다. */
+function alignRequestColumns() {
+  if (isManualTable('request')) return;
+
+  const priorTable = document.querySelector('.prior-table');
+  const requestTable = document.querySelector('.request-table');
+  if (!priorTable || !requestTable) return;
+  if (!priorTable.rows.length || !requestTable.rows.length) return;
+
+  const priorCells = Array.from(priorTable.rows[0].cells);
+  const reqCells = Array.from(requestTable.rows[0].cells);
+  if (priorCells.length < 5 || reqCells.length < 5) return;
+
+  const labelW = priorCells[0].getBoundingClientRect().width;   // 기발행금액
+  const supplyW = priorCells[1].getBoundingClientRect().width;  // 공급가액
+  const vatW = priorCells[2].getBoundingClientRect().width;     // 부가세
+  const totalW = priorCells[3].getBoundingClientRect().width;   // 합계
+  const remarkW = priorCells[4].getBoundingClientRect().width;  // 비고
+
+  const dateTh = reqCells[0];   // 발행일
+
+  const dateW = dateTh.getBoundingClientRect().width;
+
+  // 발행일 + 품목 = 기발행금액(라벨) + 공급가액  → 품목 오른쪽 선이 위 공급가액 오른쪽 선과 일치
+  const itemW = Math.max((labelW + supplyW) - dateW, 40);
+
+  const colgroup = requestTable.querySelector('colgroup');
+  if (!colgroup) return;
+  const rq1 = colgroup.querySelector('.rq1');
+  const rq2 = colgroup.querySelector('.rq2');
+  const rq3 = colgroup.querySelector('.rq3');
+  const rq4 = colgroup.querySelector('.rq4');
+  const rq5 = colgroup.querySelector('.rq5');
+  if (!rq1 || !rq2 || !rq3 || !rq4 || !rq5) return;
+
+  rq1.style.width = dateW + 'px';
+  rq2.style.width = itemW + 'px';
+  rq3.style.width = vatW + 'px';
+  rq4.style.width = totalW + 'px';
+  rq5.style.width = remarkW + 'px';
+
+  attachResizeHandles(requestTable, 'request');
+}
+
+/* ── 발행 신청 정보 - 계약금액 연동 탭 ──────────────────────────
+   "계약금액에 반영" 탭이 선택된 동안에는 기존처럼 발행 신청 정보의
+   공급가액/부가세를 입력하면 위쪽 계약금액 칸에도 그대로 들어갑니다.
+   "계약금액과 별도" 탭을 선택하면 그 이후 입력부터는 서로 영향을
+   주지 않고 각자 따로 입력됩니다(계약 하나에 여러 번 나눠서 발행
+   신청하는 경우). 각 칸 안의 공급가액/부가세 → 합계 자동계산은
+   탭 선택과 무관하게 항상 그대로 동작합니다. */
+function getRequestSyncMode() {
+  const el = document.getElementById('requestSyncMode');
+  return el ? (el.value || 'sync') : 'sync';
+}
+
+function setRequestSyncMode(mode) {
+  const el = document.getElementById('requestSyncMode');
+  if (el) el.value = mode;
+  document.querySelectorAll('.request-sync-tab').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+}
+
+function initRequestSyncTabs() {
+  document.querySelectorAll('.request-sync-tab').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      setRequestSyncMode(btn.dataset.mode);
+    });
+  });
+  setRequestSyncMode(getRequestSyncMode());
+}
+
+/* ── 발행 신청 정보(공급가액/부가세) → 공급받는자 계약금액 자동 반영 ──
+   발행 신청 정보에 공급가액/부가세를 입력하면 그 값이 위쪽 계약금액
+   칸(공급가액/부가세)에도 그대로 들어갑니다. 합계는 각 표의 기존
+   자동계산 로직이 그대로 처리합니다. ("계약금액과 별도" 탭에서는
+   건너뜁니다.) */
+function initRequestToContractSync() {
+  const reqSupply = document.querySelector('[data-field="requestSupply"]');
+  const reqVat = document.querySelector('[data-field="requestVat"]');
+  const contractSupply = document.querySelector('[data-field="contractSupply"]');
+  const contractVat = document.querySelector('[data-field="contractVat"]');
+  if (!reqSupply || !reqVat || !contractSupply || !contractVat) return;
+
+  reqSupply.addEventListener('input', function() {
+    if (getRequestSyncMode() !== 'sync') return;
+    contractSupply.value = reqSupply.value;
+    contractSupply.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+
+  reqVat.addEventListener('input', function() {
+    if (getRequestSyncMode() !== 'sync') return;
+    contractVat.dataset.touched = '1';
+    contractVat.value = reqVat.value;
+    contractVat.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+}
+
+/* ── 프로젝트명 → 품목 자동 반영 ──────────────────────────────────
+   프로젝트명 칸(몇 칸으로 나뉘어 있든 상관없이 split-row 안의
+   모든 입력칸)에 입력한 내용을 순서대로 이어붙여 발행 신청 정보의
+   품목 칸에 그대로 넣어줍니다. 품목 칸을 직접 수정하면(사용자가
+   직접 타이핑하면) 그 다음부터는 프로젝트명이 바뀌어도 덮어쓰지
+   않습니다. */
+function getProjectNameInputs() {
+  const row = document.querySelector('.split-row[data-split-group="projectName"]');
+  if (!row) return [];
+  return Array.from(row.querySelectorAll('input[type="text"][data-field]'));
+}
+
+/* ── 프로젝트명 칸을 비워두면 예시 글자를 실제 값으로 채워넣기 ──────
+   "예) " 같은 안내 접두어는 떼고, 나머지 예시 글자를 그대로
+   채웁니다. 칸과 칸 사이를 이동할 때(Tab, 방향키, backspace로 앞
+   칸 넘어가기)는 아직 입력 중인 것으로 보고 채우지 않고, 프로젝트명
+   칸 전체를 완전히 벗어날 때(다른 영역을 클릭/포커스)만 그 시점에
+   비어 있는 칸들을 채웁니다. */
+function getExampleDefaultText(el) {
+  const ph = el.placeholder || '';
+  return ph.replace(/^예\)\s*/, '').trim();
+}
+
+function fillProjectNameDefaults() {
+  getProjectNameInputs().forEach(function(el) {
+    if (el.value.trim() !== '') return;
+    const def = getExampleDefaultText(el);
+    if (!def) return;
+    el.value = def;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+}
+
+function initProjectNamePlaceholderDefaults() {
+  const row = document.querySelector('.split-row[data-split-group="projectName"]');
+  if (!row) return;
+  row.addEventListener('focusout', function(e) {
+    const goingTo = e.relatedTarget;
+    if (goingTo && row.contains(goingTo)) return;
+    fillProjectNameDefaults();
+  });
+}
+
+function syncProjectNameToItem() {
+  const item = document.querySelector('[data-field="requestItem"]');
+  if (!item || item.dataset.touched) return;
+
+  const parts = getProjectNameInputs()
+    .map(function(inp) { return inp.value; })
+    .filter(function(v) { return v && v.trim() !== ''; });
+  item.value = parts.join(' ');
+  autoGrow(item);
+}
+
+function initProjectNameToItemSync() {
+  const item = document.querySelector('[data-field="requestItem"]');
+  const inputs = getProjectNameInputs();
+  if (!item || !inputs.length) return;
+
+  item.addEventListener('input', function() { item.dataset.touched = '1'; });
+
+  inputs.forEach(function(el) {
+    el.addEventListener('input', syncProjectNameToItem);
+  });
+}
+
+/* ── 프로젝트명(2번째 칸) → 공급받는자 상호 자동 반영 ────────────────
+   프로젝트명 2번째 칸의 글자가 상호 앞칸에 그대로 들어가고, 그 뒤
+   칸에는 기본값으로 "태양광 발전소"가 자동으로 채워집니다. 상호
+   뒤칸을 직접 수정하면 그 다음부터는 자동으로 채워주지 않습니다. */
+function syncProjectNameToRecipient() {
+  const p2 = document.querySelector('[data-field="projectName2"]');
+  const r1 = document.querySelector('[data-field="recipientName1"]');
+  const r2 = document.querySelector('[data-field="recipientName2"]');
+  if (!p2 || !r1 || !r2) return;
+
+  r1.value = p2.value;
+  if (!r2.dataset.touched) {
+    r2.value = '태양광 발전소';
+  }
+
+  const row = r1.closest('.split-row');
+  layoutSplitRow(row);
+  updateRecipientAlignment();
+}
+
+function initProjectToRecipientSync() {
+  const p2 = document.querySelector('[data-field="projectName2"]');
+  const r2 = document.querySelector('[data-field="recipientName2"]');
+  if (!p2 || !r2) return;
+
+  r2.addEventListener('input', function() { r2.dataset.touched = '1'; });
+  p2.addEventListener('input', syncProjectNameToRecipient);
+}
+
+/* ── 첨부파일 선택 / 붙여넣기 / 미리보기 (이 세션 동안만 유지, 저장되지
+   않음) ── "파일 선택" 버튼(OS 파일 창)과, 환경에 따라 그 창이 뜨지
+   않는 경우를 위한 붙여넣기(Ctrl+V) 메모칸을 함께 둡니다. 메모칸에
+   이미지가 아닌 일반 텍스트를 붙여넣으면 메모로 그대로 남습니다. */
+const uploadedFiles = [];
+
+function addUploadedFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    uploadedFiles.push({
+      id: Date.now() + '_' + Math.random().toString(36).slice(2),
+      name: file.name || ('붙여넣은 이미지_' + Date.now() + '.png'),
+      type: file.type || 'image/png',
+      dataUrl: ev.target.result
+    });
+    renderUploadList();
+  };
+  reader.readAsDataURL(file);
+}
+
+function initFileUpload() {
+  const input = document.getElementById('fileUploadInput');
+  if (input) {
+    input.addEventListener('change', function(e) {
+      Array.from(e.target.files || []).forEach(addUploadedFile);
+      input.value = '';
+    });
+  }
+
+  const box = document.getElementById('pasteMemoBox');
+  if (!box) return;
+
+  box.addEventListener('paste', function(e) {
+    const cd = e.clipboardData || window.clipboardData;
+    if (!cd) return;
+
+    const items = Array.from(cd.items || []);
+    const imageItems = items.filter(function(it) {
+      return it.kind === 'file' && it.type.indexOf('image/') === 0;
+    });
+
+    if (imageItems.length) {
+      e.preventDefault();
+      imageItems.forEach(function(item) {
+        addUploadedFile(item.getAsFile());
+      });
+      return;
+    }
+
+    // 이미지가 아닌 경우(일반 텍스트) - 서식 없이 순수 텍스트로만
+    // 붙여넣어 메모칸이 지저분해지지 않도록 합니다.
+    e.preventDefault();
+    const text = cd.getData('text/plain');
+    if (text) {
+      document.execCommand('insertText', false, text);
+    }
+  });
+}
+
+function renderUploadList() {
+  const container = document.getElementById('uploadList');
+  if (!container) return;
+
+  if (!uploadedFiles.length) {
+    container.innerHTML = '<div class="saved-empty">첨부된 파일이 없습니다.</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+
+  uploadedFiles.forEach(function(file) {
+    const item = document.createElement('div');
+    item.className = 'upload-item';
+
+    if (file.type.indexOf('image/') === 0) {
+      const img = document.createElement('img');
+      img.src = file.dataUrl;
+      img.alt = file.name;
+      img.addEventListener('click', function() { window.open(file.dataUrl, '_blank'); });
+      item.appendChild(img);
+    } else {
+      const frame = document.createElement('iframe');
+      frame.className = 'upload-pdf-frame';
+      frame.src = file.dataUrl;
+      item.appendChild(frame);
+
+      const link = document.createElement('a');
+      link.className = 'upload-pdf-link';
+      link.href = file.dataUrl;
+      link.target = '_blank';
+      link.textContent = '새 탭에서 크게 보기';
+      item.appendChild(link);
+    }
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'upload-filename';
+    nameEl.textContent = file.name;
+    item.appendChild(nameEl);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'upload-remove';
+    removeBtn.textContent = '✕';
+    removeBtn.title = '삭제';
+    removeBtn.addEventListener('click', function() {
+      const idx = uploadedFiles.findIndex(function(f) { return f.id === file.id; });
+      if (idx !== -1) uploadedFiles.splice(idx, 1);
+      renderUploadList();
+    });
+    item.appendChild(removeBtn);
+
+    container.appendChild(item);
+  });
+}
+
+function initProjectColumnWatchers() {
+  ['bizNumber', 'email'].forEach(function(field) {
+    const el = document.querySelector('[data-field="' + field + '"]');
+    if (el) el.addEventListener('input', layoutProjectColumns);
+  });
+  const supplierEl = document.querySelector('[data-field="supplierName"]');
+  if (supplierEl) supplierEl.addEventListener('input', layoutRow1Columns);
+  document.querySelectorAll('.progress-inner-table .editable-label').forEach(function(el) {
+    el.addEventListener('input', layoutProgressColumns);
+  });
+  const priorLabelEl = document.querySelector('[data-field="priorLabel"]');
+  if (priorLabelEl) priorLabelEl.addEventListener('input', layoutPriorColumns);
+
+  /* 헤더 라벨 수정칸: Enter로 줄바꿈되지 않고 바로 편집을 끝내도록 */
+  document.querySelectorAll('.editable-label').forEach(function(el) {
+    el.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        el.blur();
+      }
+    });
+    el.addEventListener('paste', function(e) {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+      document.execCommand('insertText', false, text);
+    });
+  });
+}
+
+function initSplitRows() {
+  document.querySelectorAll('.split-row').forEach(function(row) {
+    const inputs = Array.from(row.querySelectorAll('input[type="text"]'));
+
+    inputs.forEach(function(inp, idx) {
+      inp.addEventListener('input', function() {
+        layoutSplitRow(row);
+        if (row.dataset.splitGroup === 'recipientName') {
+          updateRecipientAlignment();
+        }
+      });
+
+      /* 칸 맨 앞에서 backspace를 누르면(지울 게 없으면) 바로 앞 칸의
+         마지막 글자를 지우면서 그 칸으로 넘어갑니다. 계속 누르고
+         있으면(키보드 자동반복) 한 글자씩 지워지다가 그 칸도 비면
+         또 그 앞 칸으로 넘어가는 식으로 이어져서, 맨 뒤에서 계속
+         backspace를 누르고 있으면 맨 앞 칸까지 다 지워집니다. */
+      inp.addEventListener('keydown', function(e) {
+        if (e.key !== 'Backspace' || idx === 0) return;
+        const atStart = inp.selectionStart === 0 && inp.selectionEnd === 0;
+        if (!atStart) return;
+
+        e.preventDefault();
+        const prev = inputs[idx - 1];
+        if (prev.value.length > 0) {
+          prev.value = prev.value.slice(0, -1);
+        }
+        prev.focus();
+        const len = prev.value.length;
+        prev.setSelectionRange(len, len);
+        prev.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    });
+  });
+  layoutAllSplitRows();
+  updateRecipientAlignment();
+}
+
+/* ── 방향키 이동 (좌/우: 칸 끝에서 다음/이전 칸으로, 상/하: 다음/이전 칸) ── */
+function getNavFields() {
+  return Array.from(document.querySelectorAll('input[type="text"][data-field]'));
+}
+
+function initArrowNav() {
+  getNavFields().forEach(function(el) {
+    el.addEventListener('keydown', function(e) {
+      const fields = getNavFields();
+      const idx = fields.indexOf(el);
+      if (idx === -1) return;
+
+      const atStart = el.selectionStart === 0 && el.selectionEnd === 0;
+      const atEnd = el.selectionStart === el.value.length && el.selectionEnd === el.value.length;
+
+      if (e.key === 'ArrowLeft' && atStart && idx > 0) {
+        e.preventDefault();
+        const prev = fields[idx - 1];
+        prev.focus();
+        const len = prev.value.length;
+        prev.setSelectionRange(len, len);
+      } else if (e.key === 'ArrowRight' && atEnd && idx < fields.length - 1) {
+        e.preventDefault();
+        const next = fields[idx + 1];
+        next.focus();
+        next.setSelectionRange(0, 0);
+      } else if (e.key === 'ArrowUp' && idx > 0) {
+        e.preventDefault();
+        const prev = fields[idx - 1];
+        prev.focus();
+        prev.select();
+      } else if (e.key === 'ArrowDown' && idx < fields.length - 1) {
+        e.preventDefault();
+        const next = fields[idx + 1];
+        next.focus();
+        next.select();
+      }
+    });
+  });
+}
+
+/* ── 금액 자동계산 (공급가액 / 부가세 / 합계) ───────────────────── */
+const amountRowHandlers = [];
+
+document.querySelectorAll('.amount-row').forEach(function(row) {
+  const supply = row.querySelector('[data-role="supply"]');
+  const vat = row.querySelector('[data-role="vat"]');
+  const total = row.querySelector('[data-role="total"]');
+
+  if (!supply || !vat || !total) return;
+
+  function recalc() {
+    const s = parseNum(supply.value);
+    const v = vat.value.trim() === '' ? Math.round(s * 0.1) : parseNum(vat.value);
+    total.value = fmt(s + v);
+  }
+
+  amountRowHandlers.push(recalc);
+
+  supply.addEventListener('input', function() {
+    const s = parseNum(supply.value);
+
+    if (!vat.dataset.touched) {
+      vat.value = s ? fmt(Math.round(s * 0.1)) : '';
+    }
+
+    recalc();
+  });
+
+  // 공급가액에 100+10처럼 계산식을 입력한 뒤 Enter를 누르면
+  // 계산 결과를 공급가액 칸에 넣고 금액을 다시 계산합니다.
+  supply.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+
+    e.preventDefault();
+
+    const expression = supply.value
+      .replace(/,/g, '')
+      .replace(/\s+/g, '');
+
+    if (!expression || !/^[0-9+\-*/().]+$/.test(expression)) return;
+
+    try {
+      const result = Function('"use strict"; return (' + expression + ')')();
+
+      if (typeof result !== 'number' || !Number.isFinite(result)) {
+        return;
+      }
+
+      const rounded = Math.round(result);
+
+      supply.value = fmt(rounded);
+
+      vat.dataset.touched = '';
+      vat.value = rounded ? fmt(Math.round(rounded * 0.1)) : '';
+
+      recalc();
+    } catch (err) {
+      alert('계산식을 확인해주세요. 예: 100+10');
+    }
+  });
+
+  supply.addEventListener('blur', function() {
+    const s = parseNum(supply.value);
+    supply.value = s ? fmt(s) : '';
+  });
+
+  vat.addEventListener('input', function() {
+    vat.dataset.touched = '1';
+    recalc();
+  });
+
+  vat.addEventListener('blur', function() {
+    const v = parseNum(vat.value);
+    vat.value = vat.value.trim() === '' ? '' : fmt(v);
+  });
+
+  recalc();
+});
+
+function recalcAllRows() {
+  amountRowHandlers.forEach(function(fn) { fn(); });
+}
+
+/* ── 저장 목록 / 불러오기 ────────────────────────────────────── */
+function showStatus(msg) {
+  const el = document.getElementById('saveStatus');
+  if (el) el.textContent = msg;
+}
+
+function collectFormData() {
+  const data = {};
+  document.querySelectorAll('[data-field]').forEach(function(el) {
+    if (el.type === 'checkbox') {
+      data[el.dataset.field] = el.checked;
+    } else if (el.isContentEditable) {
+      data[el.dataset.field] = el.textContent;
+    } else {
+      data[el.dataset.field] = el.value;
+    }
+  });
+  return data;
+}
+
+function restoreFormData(data) {
+  document.querySelectorAll('[data-field]').forEach(function(el) {
+    const key = el.dataset.field;
+    if (!(key in data)) return;
+    if (el.type === 'checkbox') {
+      el.checked = !!data[key];
+    } else if (el.isContentEditable) {
+      el.textContent = data[key];
+    } else {
+      el.value = data[key];
+      if (el.dataset.role === 'vat' && data[key] !== '') {
+        el.dataset.touched = '1';
+      }
+      if ((key === 'requestItem' || key === 'recipientName2') && data[key] !== '') {
+        el.dataset.touched = '1';
+      }
+    }
+  });
+  setRequestSyncMode(getRequestSyncMode());
+  autoGrowAll();
+  layoutAllSplitRows();
+  updateRecipientAlignment();
+  layoutProjectColumns();
+  layoutRow1Columns();
+  layoutProgressColumns();
+  layoutPriorColumns();
+  recalcAllRows();
+}
+
+/* ── 저장 목록: Firebase Firestore로 실시간 공유 ───────────────────
+   문서 맨 앞의 <script type="module"> 블록이 Firestore에 연결해서
+   window.__firestoreBridge 를 만들어둡니다. Firebase 설정값이
+   채워져 있으면(bridge.configured === true) 저장/수정/삭제가 전부
+   Firestore로 가고, 실시간으로 다른 PC의 변경사항도 자동 반영됩니다.
+   설정이 안 되어 있으면 이 기기의 localStorage에만 저장합니다. */
+let savedListCache = [];
+
+function updateSharedStorageLabel() {
+  const title = document.getElementById('savedPanelTitle');
+  if (!title) return;
+  const bridge = window.__firestoreBridge;
+  title.textContent = (bridge && bridge.configured)
+    ? '저장된 목록 (모든 PC에서 실시간 공유됨 · 클릭하면 불러옵니다)'
+    : '저장된 목록 (이 기기에만 저장됨 · Firebase 설정 필요 · 클릭하면 불러옵니다)';
+}
+
+function getLocalSavedList() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_LIST_KEY) || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function initSharedStorage() {
+  const bridge = window.__firestoreBridge;
+  if (bridge && bridge.configured) {
+    bridge.onChange(function(items) {
+      savedListCache = items;
+      renderSavedList();
+    });
+  } else {
+    savedListCache = getLocalSavedList();
+    renderSavedList();
+  }
+  updateSharedStorageLabel();
+}
+
+function getSavedList() {
+  return savedListCache;
+}
+
+/* mutateFn(현재 목록) => 새 목록. Firestore가 설정되어 있으면
+   트랜잭션으로 안전하게 반영되고(동시에 여러 PC가 저장해도 서로
+   덮어쓰지 않습니다), 아니면 이 기기의 localStorage에만 저장합니다. */
+async function mutateSavedList(mutateFn) {
+  const bridge = window.__firestoreBridge;
+
+  if (!bridge || !bridge.configured) {
+    const newList = mutateFn(getLocalSavedList());
+    savedListCache = newList;
+    localStorage.setItem(STORAGE_LIST_KEY, JSON.stringify(newList));
+    return { ok: true, list: newList, fellBack: true };
+  }
+
+  try {
+    const newList = await bridge.mutateList(mutateFn);
+    savedListCache = newList;
+    return { ok: true, list: newList };
+  } catch (err) {
+    return { ok: false, error: err, list: getSavedList() };
+  }
+}
+
+let editingSavedItemId = null;
+
+function getSavedSearchTerm() {
+  const input = document.getElementById('savedSearchInput');
+  return input ? input.value.trim().toLowerCase() : '';
+}
+
+function matchesSavedSearch(item, term) {
+  if (!term) return true;
+  if (item.id === editingSavedItemId) return true; // 수정 중인 항목은 검색어와 상관없이 계속 보여줌
+  const label = (item.label || '').toLowerCase();
+  const memo = (item.memo || '').toLowerCase();
+  return label.indexOf(term) !== -1 || memo.indexOf(term) !== -1;
+}
+
+function renderSavedList() {
+  if (typeof currentTab !== 'undefined' && currentTab !== 'tax') return;
+  const container = document.getElementById('savedList');
+  if (!container) return;
+  const fullList = getSavedList();
+  const term = getSavedSearchTerm();
+  const list = fullList.filter(function(item) { return matchesSavedSearch(item, term); });
+
+  if (!fullList.length) {
+    container.innerHTML = '<div class="saved-empty">저장된 항목이 없습니다.</div>';
+    return;
+  }
+
+  if (!list.length) {
+    container.innerHTML = '<div class="saved-empty">검색 결과가 없습니다.</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+
+  list.forEach(function(item) {
+    const row = document.createElement('div');
+    row.className = 'saved-item';
+
+    if (editingSavedItemId === item.id) {
+      row.appendChild(buildEditForm(item));
+      container.appendChild(row);
+      return;
+    }
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'saved-item-btn';
+    const memoHtml = item.memo
+      ? '<span class="saved-item-memo">' + item.memo.replace(/</g, '&lt;') + '</span>'
+      : '';
+    btn.innerHTML = '<span class="saved-item-label">' + item.label.replace(/</g, '&lt;') + '</span>' +
+      '<span class="saved-item-time">' + item.time + '</span>' + memoHtml;
+    btn.title = item.label + (item.memo ? ('\n' + item.memo) : '');
+    btn.addEventListener('click', function() {
+      restoreFormData(item.data);
+      const nameInput = document.getElementById('saveNameInput');
+      const memoInput = document.getElementById('saveMemoInput');
+      if (nameInput) nameInput.value = item.label || '';
+      if (memoInput) memoInput.value = item.memo || '';
+      showStatus('"' + item.label + '"' + (item.memo ? ' (' + item.memo + ')' : '') + ' 불러왔습니다.');
+    });
+
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'saved-item-edit';
+    edit.textContent = '✎';
+    edit.title = '이름/메모 수정';
+    edit.addEventListener('click', function(e) {
+      e.stopPropagation();
+      editingSavedItemId = item.id;
+      renderSavedList();
+    });
+
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'saved-item-del';
+    del.textContent = '✕';
+    del.title = '삭제';
+    del.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (!confirm('"' + item.label + '" 항목을 삭제할까요?')) return;
+      del.disabled = true;
+      mutateSavedList(function(list) {
+        return list.filter(function(x) { return x.id !== item.id; });
+      }).then(function(result) {
+        if (!result.ok) {
+          showStatus('삭제에 실패했습니다. 다시 시도해주세요.');
+          del.disabled = false;
+          return;
+        }
+        if (result.fellBack) {
+          showStatus('공유 저장소에 연결할 수 없어 이 기기에만 저장되었습니다.');
+        }
+        renderSavedList();
+      });
+    });
+
+    row.appendChild(btn);
+    row.appendChild(edit);
+    row.appendChild(del);
+    container.appendChild(row);
+  });
+}
+
+function buildEditForm(item) {
+  const form = document.createElement('div');
+  form.className = 'saved-item-editform';
+
+  const labelInput = document.createElement('input');
+  labelInput.type = 'text';
+  labelInput.value = item.label;
+  labelInput.placeholder = '제목';
+
+  const memoInput = document.createElement('textarea');
+  memoInput.rows = 2;
+  memoInput.value = item.memo || '';
+  memoInput.placeholder = '메모 (선택사항)';
+
+  const btnRow = document.createElement('div');
+  btnRow.className = 'editform-buttons';
+
+  const saveBtn = document.createElement('button');
+  saveBtn.type = 'button';
+  saveBtn.className = 'save';
+  saveBtn.textContent = '저장';
+  saveBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const newLabel = labelInput.value.trim();
+    const newMemo = memoInput.value.trim();
+    saveBtn.disabled = true;
+
+    mutateSavedList(function(list) {
+      return list.map(function(x) {
+        if (x.id !== item.id) return x;
+        return Object.assign({}, x, {
+          label: newLabel || x.label,
+          memo: newMemo
+        });
+      });
+    }).then(function(result) {
+      saveBtn.disabled = false;
+      if (!result.ok) {
+        showStatus('수정에 실패했습니다. 다시 시도해주세요.');
+        return;
+      }
+      showStatus(result.fellBack
+        ? '공유 저장소에 연결할 수 없어 이 기기에만 저장되었습니다.'
+        : '수정되었습니다.');
+      editingSavedItemId = null;
+      renderSavedList();
+    });
+  });
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.textContent = '취소';
+  cancelBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    editingSavedItemId = null;
+    renderSavedList();
+  });
+
+  btnRow.appendChild(cancelBtn);
+  btnRow.appendChild(saveBtn);
+
+  form.appendChild(labelInput);
+  form.appendChild(memoInput);
+  form.appendChild(btnRow);
+
+  return form;
+}
+
+async function saveForm() {
+  fillProjectNameDefaults();
+  const data = collectFormData();
+  const nameInputEl = document.getElementById('saveNameInput');
+  const typedName = nameInputEl ? nameInputEl.value.trim() : '';
+
+  const nameParts = getProjectNameInputs()
+    .map(function(inp) { return data[inp.dataset.field]; })
+    .filter(Boolean);
+  const autoLabel = nameParts.length ? nameParts.join(' ') : ('제목없음 ' + new Date().toLocaleString('ko-KR'));
+  const label = typedName || autoLabel;
+
+  const memoInputEl = document.getElementById('saveMemoInput');
+  const memo = memoInputEl ? memoInputEl.value.trim() : '';
+
+  showStatus('저장 중...');
+
+  const result = await mutateSavedList(function(list) {
+    const newItem = {
+      id: Date.now(),
+      label: label,
+      memo: memo,
+      time: new Date().toLocaleString('ko-KR'),
+      data: data
+    };
+    return [newItem].concat(list);
+  });
+
+  if (!result.ok) {
+    showStatus('저장에 실패했습니다. 다시 시도해주세요.');
+    return;
+  }
+
+  renderSavedList();
+  if (nameInputEl) nameInputEl.value = '';
+  if (memoInputEl) memoInputEl.value = '';
+  showStatus(result.fellBack
+    ? '"' + label + '" 이 기기에 저장되었습니다. (공유 저장소 연결 실패)'
+    : '"' + label + '" 저장되었습니다.');
+}
+
+function resetForm() {
+  if (!confirm('입력한 내용을 모두 초기화할까요?')) return;
+
+  document.querySelectorAll('input[type="text"], textarea').forEach(function(el) {
+    el.value = '';
+    delete el.dataset.touched;
+    autoGrow(el);
+  });
+
+  const supplier = document.querySelector('[data-field="supplierName"]');
+  if (supplier) supplier.value = '(주)에타솔라';
+
+  document.querySelectorAll('input[name="progress"]').forEach(function(cb, i) {
+    cb.checked = (i === 0);
+  });
+
+  setRequestSyncMode('sync');
+
+  recalcAllRows();
+  layoutAllSplitRows();
+  updateRecipientAlignment();
+  layoutProjectColumns();
+  layoutRow1Columns();
+  layoutProgressColumns();
+  layoutPriorColumns();
+  showStatus('');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   지출결의서 탭
+   ══════════════════════════════════════════════════════════════ */
+let currentTab = 'tax';
+
+function todayStr() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+
+/* ── 행(지급 건) 추가/삭제 ──────────────────────────────────────── */
+function getExpenseRows() {
+  return Array.from(document.querySelectorAll('#expenseRowsBody tr'));
+}
+
+function renumberExpenseRows() {
+  getExpenseRows().forEach(function(tr, idx) {
+    const noCell = tr.querySelector('.exp-row-no');
+    if (noCell) noCell.textContent = String(idx + 1);
+  });
+}
+
+function createExpenseRow() {
+  const tr = document.createElement('tr');
+  tr.innerHTML =
+    '<td class="exp-row-no"></td>' +
+    '<td><textarea class="left auto-grow" rows="1" data-rf="payItem" placeholder="예) 2026년 건물지원사업_(주)비앤디솔루션 태양광설비 199.95kW 설치공사"></textarea></td>' +
+    '<td><textarea class="auto-grow" rows="1" data-rf="payTo" placeholder="예) (주)에타솔라"></textarea></td>' +
+    '<td><input type="text" data-rf="payDate" placeholder="YYYY-MM-DD"></td>' +
+    '<td><input type="text" data-rf="plannedAmount"></td>' +
+    '<td><input type="text" data-rf="totalContract" readonly></td>' +
+    '<td><input type="text" data-rf="previousPaid"></td>' +
+    '<td><input type="text" data-rf="balance" readonly></td>';
+  return tr;
+}
+
+/* 총계약금액 = 지급예정금액 + 이전지급액
+   잔액       = 총계약금액 - 지급예정금액 - 이전지급액 */
+function recalcRowAmounts(tr) {
+  const plannedAmount = tr.querySelector('[data-rf="plannedAmount"]');
+  const previousPaid = tr.querySelector('[data-rf="previousPaid"]');
+  const totalContract = tr.querySelector('[data-rf="totalContract"]');
+  const balance = tr.querySelector('[data-rf="balance"]');
+
+  // 지급예정금액/이전지급액을 아직 입력하지 않았으면, 총계약금액/잔액
+  // 칸에 "0"이 자동으로 채워지지 않고 다른 빈 칸처럼 비어있게(회색
+  // 안내글자만) 둡니다.
+  if (plannedAmount.value.trim() === '' && previousPaid.value.trim() === '') {
+    totalContract.value = '';
+    balance.value = '';
+    recalcExpenseTotals();
+    return;
+  }
+
+  const planned = parseNum(plannedAmount.value);
+  const prev = parseNum(previousPaid.value);
+  const total = planned + prev;
+  const bal = total - planned - prev;
+
+  totalContract.value = fmt(total);
+  balance.value = fmt(bal);
+
+  recalcExpenseTotals();
+}
+
+function bindExpenseRow(tr) {
+  const plannedAmount = tr.querySelector('[data-rf="plannedAmount"]');
+  const previousPaid = tr.querySelector('[data-rf="previousPaid"]');
+  const payItem = tr.querySelector('[data-rf="payItem"]');
+  const payTo = tr.querySelector('[data-rf="payTo"]');
+
+  plannedAmount.addEventListener('input', function() { recalcRowAmounts(tr); });
+  previousPaid.addEventListener('input', function() { recalcRowAmounts(tr); });
+
+  [plannedAmount, previousPaid].forEach(function(el) {
+    el.addEventListener('blur', function() {
+      const n = parseNum(el.value);
+      el.value = el.value.trim() === '' ? '' : fmt(n);
+    });
+  });
+
+  [payItem, payTo].forEach(function(el) {
+    el.addEventListener('input', function() {
+      autoGrow(el);
+      recalcExpenseTotals();
+    });
+  });
+}
+
+/* 행 삭제 - 화면 캡쳐 시 표 안에 삭제 버튼이 함께 찍히지 않도록,
+   삭제 버튼은 표 안이 아니라 표 오른쪽 바깥에 따로 띄워둡니다
+   (syncExpenseDelButtons가 각 행 높이에 맞춰 위치를 맞춰줍니다). */
+function deleteExpenseRow(tr) {
+  if (getExpenseRows().length <= 1) {
+    alert('최소 1개 행은 있어야 합니다.');
+    return;
+  }
+  if (!confirm('이 행을 삭제할까요?')) return;
+  tr.remove();
+  renumberExpenseRows();
+  recalcExpenseTotals();
+}
+
+function syncExpenseDelButtons() {
+  const table = document.getElementById('expenseTable');
+  if (!table) return;
+  const wrap = table.parentElement;
+  if (!wrap || !wrap.classList.contains('col-resize-wrap')) return;
+
+  let rail = wrap.querySelector(':scope > .expense-del-rail');
+  if (!rail) {
+    rail = document.createElement('div');
+    rail.className = 'expense-del-rail';
+    wrap.appendChild(rail);
+  }
+
+  const rows = Array.from(document.querySelectorAll('#expenseRowsBody tr'));
+  let btns = Array.from(rail.querySelectorAll(':scope > .row-del-btn'));
+
+  // 행 개수가 바뀐 경우에만 버튼을 다시 만듭니다(매번 새로 만들면
+  // 입력할 때마다 마우스 오버 리스너가 계속 쌓이게 됩니다).
+  if (btns.length !== rows.length) {
+    rail.innerHTML = '';
+    btns = rows.map(function(tr) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'row-del-btn';
+      btn.title = '행 삭제';
+      btn.textContent = '✕';
+
+      // 평소에는 안 보이다가(화면 캡쳐 시 함께 찍히지 않도록), 그 행
+      // 위에 마우스를 올렸을 때만 나타납니다.
+      function show() { btn.classList.add('row-del-btn-visible'); }
+      function hide() { btn.classList.remove('row-del-btn-visible'); }
+      btn._showHandler = show;
+      btn._hideHandler = hide;
+      btn.addEventListener('mouseenter', show);
+      btn.addEventListener('mouseleave', hide);
+
+      rail.appendChild(btn);
+      return btn;
+    });
+  }
+
+  rows.forEach(function(tr, i) {
+    const btn = btns[i];
+    if (!btn) return;
+
+    if (tr._delBtnRowHoverBound !== btn) {
+      if (tr._delBtnRowHoverShow) {
+        tr.removeEventListener('mouseenter', tr._delBtnRowHoverShow);
+        tr.removeEventListener('mouseleave', tr._delBtnRowHoverHide);
+      }
+      tr.addEventListener('mouseenter', btn._showHandler);
+      tr.addEventListener('mouseleave', btn._hideHandler);
+      tr._delBtnRowHoverShow = btn._showHandler;
+      tr._delBtnRowHoverHide = btn._hideHandler;
+      tr._delBtnRowHoverBound = btn;
+    }
+
+    btn.onclick = function() { deleteExpenseRow(tr); };
+    btn.style.top = (tr.offsetTop + tr.offsetHeight / 2) + 'px';
+  });
+}
+
+function addExpenseRow(prefill) {
+  const existingRows = getExpenseRows();
+  const lastRow = existingRows.length ? existingRows[existingRows.length - 1] : null;
+
+  const tr = createExpenseRow();
+  document.getElementById('expenseRowsBody').appendChild(tr);
+  bindExpenseRow(tr);
+  renumberExpenseRows();
+
+  const dateEl = tr.querySelector('[data-rf="payDate"]');
+  dateEl.value = (prefill && prefill.payDate) ? prefill.payDate : todayStr();
+
+  if (prefill) {
+    Object.keys(prefill).forEach(function(k) {
+      if (k === 'payDate') return;
+      const el = tr.querySelector('[data-rf="' + k + '"]');
+      if (el) el.value = prefill[k];
+    });
+  }
+
+  // 지급처는 한 번 입력해두면 새로 추가되는 행에 그대로 이어서 채워집니다.
+  if ((!prefill || !prefill.payTo) && lastRow) {
+    const prevPayTo = lastRow.querySelector('[data-rf="payTo"]').value;
+    if (prevPayTo) {
+      tr.querySelector('[data-rf="payTo"]').value = prevPayTo;
+    }
+  }
+
+  autoGrow(tr.querySelector('[data-rf="payItem"]'));
+  autoGrow(tr.querySelector('[data-rf="payTo"]'));
+  recalcRowAmounts(tr);
+  return tr;
+}
+
+/* ── 합계 / 안내 박스(지급금액·지급정보·지급상세내용) 자동 반영 ──────
+   행이 여러 개면 값을 " / "로 이어붙여서 보여줍니다. */
+function recalcExpenseTotals() {
+  const rows = getExpenseRows();
+  let sumPlanned = 0, sumTotal = 0, sumPrev = 0, sumBalance = 0;
+  const amounts = [];
+  const infos = [];
+  const details = [];
+
+  rows.forEach(function(tr) {
+    const plannedEl = tr.querySelector('[data-rf="plannedAmount"]');
+    const totalEl = tr.querySelector('[data-rf="totalContract"]');
+    const prevEl = tr.querySelector('[data-rf="previousPaid"]');
+    const balEl = tr.querySelector('[data-rf="balance"]');
+    const payToEl = tr.querySelector('[data-rf="payTo"]');
+    const payItemEl = tr.querySelector('[data-rf="payItem"]');
+
+    sumPlanned += parseNum(plannedEl.value);
+    sumTotal += parseNum(totalEl.value);
+    sumPrev += parseNum(prevEl.value);
+    sumBalance += parseNum(balEl.value);
+
+    if (plannedEl.value.trim() !== '') amounts.push(fmt(parseNum(plannedEl.value)));
+    // 예금주(지급처)는 같은 값이 여러 행에 반복돼도 지급정보에는 한 번만
+    // 나오도록 중복을 제거합니다.
+    const payToVal = payToEl.value.trim();
+    if (payToVal !== '' && infos.indexOf(payToVal) === -1) infos.push(payToVal);
+    if (payItemEl.value.trim() !== '') details.push(payItemEl.value.trim());
+  });
+
+  document.getElementById('expSumPlannedTotal').textContent = fmt(sumPlanned);
+
+  // 지급예정금액 합계는 부가세 포함 금액이므로, 여기서 공급가액/부가세를
+  // 역산해서 표시합니다 (공급가액 = 합계 ÷ 1.1, 부가세 = 합계 - 공급가액).
+  const supply = Math.round(sumPlanned / 1.1);
+  const vat = sumPlanned - supply;
+  document.getElementById('expSumSupplyVat').textContent = fmt(supply) + ' / ' + fmt(vat);
+
+  document.getElementById('expPayAmountView').textContent = amounts.join(' / ');
+  document.getElementById('expPayInfoView').textContent = buildPayInfoText(infos.join(' / '));
+  document.getElementById('expPayDetailView').textContent = details.join(' / ');
+
+  syncExpenseDelButtons();
+}
+
+/* 4. 지급정보를 "결제은행 / 계좌번호 / 예금주" 형식으로 보여줍니다. */
+function buildPayInfoText(payToJoined) {
+  const bankEl = document.getElementById('payBankInput');
+  const accountEl = document.getElementById('payAccountInput');
+  const bank = bankEl ? bankEl.value.trim() : '';
+  const account = accountEl ? accountEl.value.trim() : '';
+
+  const parts = [];
+  if (bank) parts.push(bank);
+  if (account) parts.push(account);
+  if (payToJoined) parts.push(payToJoined);
+  return parts.join(' / ');
+}
+
+function initBankAccountInputs() {
+  const bankEl = document.getElementById('payBankInput');
+  const accountEl = document.getElementById('payAccountInput');
+  if (bankEl) bankEl.addEventListener('input', recalcExpenseTotals);
+  if (accountEl) accountEl.addEventListener('input', recalcExpenseTotals);
+}
+
+/* ── 저장 데이터 수집 / 복원 ────────────────────────────────────── */
+function collectExpenseData() {
+  const rows = getExpenseRows().map(function(tr) {
+    const row = {};
+    tr.querySelectorAll('[data-rf]').forEach(function(el) {
+      row[el.dataset.rf] = el.value;
+    });
+    return row;
+  });
+  const data = { rows: rows };
+  document.querySelectorAll('#sheetExpense [data-xfield], #expenseBankBox [data-xfield]').forEach(function(el) {
+    data[el.dataset.xfield] = el.value;
+  });
+  return data;
+}
+
+function restoreExpenseData(data) {
+  const body = document.getElementById('expenseRowsBody');
+  body.innerHTML = '';
+  const rows = (data && Array.isArray(data.rows) && data.rows.length) ? data.rows : [{}];
+  rows.forEach(function(rowData) {
+    addExpenseRow(rowData);
+  });
+  document.querySelectorAll('#sheetExpense [data-xfield], #expenseBankBox [data-xfield]').forEach(function(el) {
+    const key = el.dataset.xfield;
+    if (data && key in data) {
+      el.value = data[key];
+      autoGrow(el);
+    }
+  });
+  recalcExpenseTotals();
+}
+
+/* ── 저장 목록 (세금계산서와 동일한 문서를 사용하되, expenseItems
+   필드에 별도로 저장되어 서로 섞이지 않습니다) ────────────────── */
+const EXPENSE_STORAGE_LIST_KEY = 'expenseSlipForm_list_v1';
+let expenseSavedListCache = [];
+let editingExpenseSavedItemId = null;
+
+function updateExpenseSharedStorageLabel() {
+  if (currentTab !== 'expense') return;
+  const title = document.getElementById('savedPanelTitle');
+  if (!title) return;
+  const bridge = window.__expenseFirestoreBridge;
+  title.textContent = (bridge && bridge.configured)
+    ? '저장된 목록 (모든 PC에서 실시간 공유됨 · 클릭하면 불러옵니다)'
+    : '저장된 목록 (이 기기에만 저장됨 · Firebase 설정 필요 · 클릭하면 불러옵니다)';
+}
+
+function getLocalExpenseSavedList() {
+  try {
+    return JSON.parse(localStorage.getItem(EXPENSE_STORAGE_LIST_KEY) || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function initExpenseSharedStorage() {
+  const bridge = window.__expenseFirestoreBridge;
+  if (bridge && bridge.configured) {
+    bridge.onChange(function(items) {
+      expenseSavedListCache = items;
+      renderExpenseSavedList();
+    });
+  } else {
+    expenseSavedListCache = getLocalExpenseSavedList();
+    renderExpenseSavedList();
+  }
+  updateExpenseSharedStorageLabel();
+}
+
+function getExpenseSavedList() {
+  return expenseSavedListCache;
+}
+
+async function mutateExpenseSavedList(mutateFn) {
+  const bridge = window.__expenseFirestoreBridge;
+
+  if (!bridge || !bridge.configured) {
+    const newList = mutateFn(getLocalExpenseSavedList());
+    expenseSavedListCache = newList;
+    localStorage.setItem(EXPENSE_STORAGE_LIST_KEY, JSON.stringify(newList));
+    return { ok: true, list: newList, fellBack: true };
+  }
+
+  try {
+    const newList = await bridge.mutateList(mutateFn);
+    expenseSavedListCache = newList;
+    return { ok: true, list: newList };
+  } catch (err) {
+    return { ok: false, error: err, list: getExpenseSavedList() };
+  }
+}
+
+function getExpenseSavedSearchTerm() {
+  const input = document.getElementById('savedSearchInput');
+  return input ? input.value.trim().toLowerCase() : '';
+}
+
+function matchesExpenseSavedSearch(item, term) {
+  if (!term) return true;
+  if (item.id === editingExpenseSavedItemId) return true;
+  const label = (item.label || '').toLowerCase();
+  const memo = (item.memo || '').toLowerCase();
+  return label.indexOf(term) !== -1 || memo.indexOf(term) !== -1;
+}
+
+function renderExpenseSavedList() {
+  if (currentTab !== 'expense') return;
+  const container = document.getElementById('savedList');
+  if (!container) return;
+  const fullList = getExpenseSavedList();
+  const term = getExpenseSavedSearchTerm();
+  const list = fullList.filter(function(item) { return matchesExpenseSavedSearch(item, term); });
+
+  if (!fullList.length) {
+    container.innerHTML = '<div class="saved-empty">저장된 항목이 없습니다.</div>';
+    return;
+  }
+  if (!list.length) {
+    container.innerHTML = '<div class="saved-empty">검색 결과가 없습니다.</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+
+  list.forEach(function(item) {
+    const row = document.createElement('div');
+    row.className = 'saved-item';
+
+    if (editingExpenseSavedItemId === item.id) {
+      row.appendChild(buildExpenseEditForm(item));
+      container.appendChild(row);
+      return;
+    }
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'saved-item-btn';
+    const memoHtml = item.memo
+      ? '<span class="saved-item-memo">' + item.memo.replace(/</g, '&lt;') + '</span>'
+      : '';
+    btn.innerHTML = '<span class="saved-item-label">' + item.label.replace(/</g, '&lt;') + '</span>' +
+      '<span class="saved-item-time">' + item.time + '</span>' + memoHtml;
+    btn.title = item.label + (item.memo ? ('\n' + item.memo) : '');
+    btn.addEventListener('click', function() {
+      restoreExpenseData(item.data);
+      const nameInput = document.getElementById('saveNameInput');
+      const memoInput = document.getElementById('saveMemoInput');
+      if (nameInput) nameInput.value = item.label || '';
+      if (memoInput) memoInput.value = item.memo || '';
+      showStatus('"' + item.label + '"' + (item.memo ? ' (' + item.memo + ')' : '') + ' 불러왔습니다.');
+    });
+
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'saved-item-edit';
+    edit.textContent = '✎';
+    edit.title = '이름/메모 수정';
+    edit.addEventListener('click', function(e) {
+      e.stopPropagation();
+      editingExpenseSavedItemId = item.id;
+      renderExpenseSavedList();
+    });
+
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'saved-item-del';
+    del.textContent = '✕';
+    del.title = '삭제';
+    del.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (!confirm('"' + item.label + '" 항목을 삭제할까요?')) return;
+      del.disabled = true;
+      mutateExpenseSavedList(function(list) {
+        return list.filter(function(x) { return x.id !== item.id; });
+      }).then(function(result) {
+        if (!result.ok) {
+          showStatus('삭제에 실패했습니다. 다시 시도해주세요.');
+          del.disabled = false;
+          return;
+        }
+        if (result.fellBack) {
+          showStatus('공유 저장소에 연결할 수 없어 이 기기에만 저장되었습니다.');
+        }
+        renderExpenseSavedList();
+      });
+    });
+
+    row.appendChild(btn);
+    row.appendChild(edit);
+    row.appendChild(del);
+    container.appendChild(row);
+  });
+}
+
+function buildExpenseEditForm(item) {
+  const form = document.createElement('div');
+  form.className = 'saved-item-editform';
+
+  const labelInput = document.createElement('input');
+  labelInput.type = 'text';
+  labelInput.value = item.label;
+  labelInput.placeholder = '제목';
+
+  const memoInput = document.createElement('textarea');
+  memoInput.rows = 2;
+  memoInput.value = item.memo || '';
+  memoInput.placeholder = '메모 (선택사항)';
+
+  const btnRow = document.createElement('div');
+  btnRow.className = 'editform-buttons';
+
+  const saveBtn = document.createElement('button');
+  saveBtn.type = 'button';
+  saveBtn.className = 'save';
+  saveBtn.textContent = '저장';
+  saveBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const newLabel = labelInput.value.trim();
+    const newMemo = memoInput.value.trim();
+    saveBtn.disabled = true;
+
+    mutateExpenseSavedList(function(list) {
+      return list.map(function(x) {
+        if (x.id !== item.id) return x;
+        return Object.assign({}, x, {
+          label: newLabel || x.label,
+          memo: newMemo
+        });
+      });
+    }).then(function(result) {
+      saveBtn.disabled = false;
+      if (!result.ok) {
+        showStatus('수정에 실패했습니다. 다시 시도해주세요.');
+        return;
+      }
+      showStatus(result.fellBack
+        ? '공유 저장소에 연결할 수 없어 이 기기에만 저장되었습니다.'
+        : '수정되었습니다.');
+      editingExpenseSavedItemId = null;
+      renderExpenseSavedList();
+    });
+  });
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.textContent = '취소';
+  cancelBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    editingExpenseSavedItemId = null;
+    renderExpenseSavedList();
+  });
+
+  btnRow.appendChild(cancelBtn);
+  btnRow.appendChild(saveBtn);
+
+  form.appendChild(labelInput);
+  form.appendChild(memoInput);
+  form.appendChild(btnRow);
+
+  return form;
+}
+
+async function saveExpenseForm() {
+  const data = collectExpenseData();
+  const nameInputEl = document.getElementById('saveNameInput');
+  const typedName = nameInputEl ? nameInputEl.value.trim() : '';
+
+  const firstItem = (data.rows[0] && data.rows[0].payItem) ? data.rows[0].payItem.trim() : '';
+  const autoLabel = firstItem || ('제목없음 ' + new Date().toLocaleString('ko-KR'));
+  const label = typedName || autoLabel;
+
+  const memoInputEl = document.getElementById('saveMemoInput');
+  const memo = memoInputEl ? memoInputEl.value.trim() : '';
+
+  showStatus('저장 중...');
+
+  const result = await mutateExpenseSavedList(function(list) {
+    const newItem = {
+      id: Date.now(),
+      label: label,
+      memo: memo,
+      time: new Date().toLocaleString('ko-KR'),
+      data: data
+    };
+    return [newItem].concat(list);
+  });
+
+  if (!result.ok) {
+    showStatus('저장에 실패했습니다. 다시 시도해주세요.');
+    return;
+  }
+
+  renderExpenseSavedList();
+  if (nameInputEl) nameInputEl.value = '';
+  if (memoInputEl) memoInputEl.value = '';
+  showStatus(result.fellBack
+    ? '"' + label + '" 이 기기에 저장되었습니다. (공유 저장소 연결 실패)'
+    : '"' + label + '" 저장되었습니다.');
+}
+
+function resetExpenseForm() {
+  if (!confirm('입력한 내용을 모두 초기화할까요?')) return;
+  document.getElementById('expenseRowsBody').innerHTML = '';
+  addExpenseRow();
+  document.querySelectorAll('#sheetExpense [data-xfield]').forEach(function(el) {
+    el.value = '';
+    autoGrow(el);
+  });
+  showStatus('');
+}
+
+function initExpenseTab() {
+  document.getElementById('addExpenseRowBtn').addEventListener('click', function() {
+    addExpenseRow();
+  });
+  addExpenseRow();
+  initExpenseSharedStorage();
+
+  layoutExpenseColumns();
+
+  const guideTable = document.querySelector('#sheetExpense .guide-table');
+  if (isManualTable('guideTable')) {
+    applyManualColWidths(guideTable, 'guideTable');
+  }
+  attachResizeHandles(guideTable, 'guideTable');
+
+  layoutExpenseSumColumns();
+
+  initBankAccountInputs();
+  initAccentColorPicker();
+}
+
+/* ── 지출결의서 표 기본 열너비 ───────────────────────────────────
+   오른쪽 칸들(No/지급처/날짜/지급예정금액/총계약금액/이전지급액/
+   잔액/삭제)은 각 제목 글자에 딱 맞는 폭만 쓰고, 남는 폭을 전부
+   왼쪽의 "프로젝트명 / 지급내역" 칸이 차지합니다. 마우스로 직접
+   너비를 조절한 뒤에는(수동 저장값이 있으면) 이 자동 계산을
+   더 이상 하지 않고 저장된 값을 그대로 씁니다. */
+function layoutExpenseColumns() {
+  const table = document.getElementById('expenseTable');
+  if (!table) return;
+
+  if (isManualTable('expense')) {
+    applyManualColWidths(table, 'expense');
+    attachResizeHandles(table, 'expense', layoutExpenseSumColumns);
+    syncExpenseDelButtons();
+    return;
+  }
+
+  const colgroup = table.querySelector('colgroup');
+  if (!colgroup) return;
+
+  const noCol = colgroup.querySelector('.exp-no');
+  const itemCol = colgroup.querySelector('.exp-item');
+  const placeCol = colgroup.querySelector('.exp-place');
+  const dateCol = colgroup.querySelector('.exp-date');
+  const amt1Col = colgroup.querySelector('.exp-amt1');
+  const amt2Col = colgroup.querySelector('.exp-amt2');
+  const amt3Col = colgroup.querySelector('.exp-amt3');
+  const amt4Col = colgroup.querySelector('.exp-amt4');
+  if (!noCol || !itemCol || !placeCol || !dateCol || !amt1Col || !amt2Col || !amt3Col || !amt4Col) return;
+
+  const fontFamily = '"Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
+  const boldFont = '700 12px ' + fontFamily;
+  const pad = 22;
+
+  function fitW(text) { return measureTextWidth(text, boldFont) + pad; }
+
+  const noW = fitW('No');
+  const placeW = fitW('지급처');
+  const dateW = fitW('날짜');
+  const amt1W = fitW('지급예정금액');
+  const amt2W = fitW('총계약금액');
+  const amt3W = fitW('이전지급액');
+  const amt4W = fitW('잔 액');
+
+  const totalWidth = table.parentElement.clientWidth || 725;
+  const fixedSum = noW + placeW + dateW + amt1W + amt2W + amt3W + amt4W;
+  const itemW = Math.max(totalWidth - fixedSum, 80);
+
+  noCol.style.width = noW + 'px';
+  itemCol.style.width = itemW + 'px';
+  placeCol.style.width = placeW + 'px';
+  dateCol.style.width = dateW + 'px';
+  amt1Col.style.width = amt1W + 'px';
+  amt2Col.style.width = amt2W + 'px';
+  amt3Col.style.width = amt3W + 'px';
+  amt4Col.style.width = amt4W + 'px';
+
+  attachResizeHandles(table, 'expense', layoutExpenseSumColumns);
+  syncExpenseDelButtons();
+}
+
+/* ── 합계 줄 (별도 표) 열너비 ───────────────────────────────────
+   합계 줄은 위쪽 지출결의서 데이터 표와는 별개의 <table>이라
+   서로 열너비가 연동되지 않습니다. 사용자가 합계 줄 쪽 경계선을
+   손대기 전까지는(수동 저장값이 없으면) 위 데이터 표의 현재 폭에
+   맞춰 자동으로 맞춰주고, 한 번이라도 직접 조절하면 그 값을
+   그대로 유지합니다(위 표를 조절해도 더 이상 따라 움직이지 않음). */
+function layoutExpenseSumColumns() {
+  const sumTable = document.getElementById('expenseSumTable');
+  if (!sumTable) return;
+
+  if (isManualTable('expenseSum')) {
+    applyManualColWidths(sumTable, 'expenseSum');
+    attachResizeHandles(sumTable, 'expenseSum');
+    return;
+  }
+
+  const mainCols = document.querySelectorAll('#expenseTable > colgroup > col');
+  if (mainCols.length !== 8) {
+    attachResizeHandles(sumTable, 'expenseSum');
+    return;
+  }
+  const widths = colWidthsPx(Array.from(mainCols));
+  const labelW = widths[0] + widths[1] + widths[2] + widths[3];
+  const val1W = widths[4] + widths[5];
+  const val2W = widths[6] + widths[7];
+
+  const sumCols = sumTable.querySelectorAll(':scope > colgroup > col');
+  if (sumCols.length === 3) {
+    sumCols[0].style.width = labelW + 'px';
+    sumCols[1].style.width = val1W + 'px';
+    sumCols[2].style.width = val2W + 'px';
+  }
+
+  attachResizeHandles(sumTable, 'expenseSum');
+}
+
+/* ── 지출결의서 강조 글자색(보라색) 변경 ─────────────────────────── */
+const ACCENT_COLOR_KEY = 'expenseSlipForm_accentColor_v1';
+
+function applyAccentColor(hex) {
+  document.documentElement.style.setProperty('--exp-accent', hex);
+}
+
+function initAccentColorPicker() {
+  const input = document.getElementById('expAccentColorInput');
+  if (!input) return;
+
+  let saved = null;
+  try { saved = localStorage.getItem(ACCENT_COLOR_KEY); } catch (e) {}
+  if (saved) {
+    input.value = saved;
+    applyAccentColor(saved);
+  }
+
+  input.addEventListener('input', function() {
+    applyAccentColor(input.value);
+    try { localStorage.setItem(ACCENT_COLOR_KEY, input.value); } catch (e) {}
+  });
+}
+
+/* ── 저장 / 초기화 버튼: 현재 활성 탭에 따라 분기 ─────────────────── */
+function saveCurrent() {
+  if (currentTab === 'tax') {
+    saveForm();
+  } else {
+    saveExpenseForm();
+  }
+}
+
+function resetCurrent() {
+  if (currentTab === 'tax') {
+    resetForm();
+  } else {
+    resetExpenseForm();
+  }
+}
+
+/* ── 상단 탭 전환 ──────────────────────────────────────────────── */
+function switchTab(tab) {
+  if (tab === currentTab) return;
+  currentTab = tab;
+
+  document.querySelectorAll('.main-tab').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+
+  const sheetTax = document.getElementById('sheetTax');
+  const sheetExpense = document.getElementById('sheetExpense');
+  if (sheetTax) sheetTax.classList.toggle('tab-hidden', tab !== 'tax');
+  if (sheetExpense) sheetExpense.classList.toggle('tab-hidden', tab !== 'expense');
+
+  const bankBox = document.getElementById('expenseBankBox');
+  if (bankBox) bankBox.classList.toggle('tab-hidden', tab !== 'expense');
+
+  const nameInput = document.getElementById('saveNameInput');
+  if (nameInput) {
+    nameInput.placeholder = (tab === 'tax')
+      ? '저장할 이름 (비워두면 프로젝트명 사용)'
+      : '저장할 이름 (비워두면 지급내역 사용)';
+  }
+
+  showStatus('');
+
+  if (tab === 'expense') {
+    autoGrowAll();
+    renderExpenseSavedList();
+    updateExpenseSharedStorageLabel();
+    layoutExpenseColumns();
+    const guideTable = document.querySelector('#sheetExpense .guide-table');
+    if (guideTable) attachResizeHandles(guideTable, 'guideTable');
+    layoutExpenseSumColumns();
+  } else {
+    layoutAllSplitRows();
+    updateRecipientAlignment();
+    layoutProjectColumns();
+    layoutRow1Columns();
+    layoutProgressColumns();
+    layoutPriorColumns();
+    alignRequestColumns();
+    autoGrowAll();
+    renderSavedList();
+    updateSharedStorageLabel();
+  }
+}
+
+function initMainTabs() {
+  document.querySelectorAll('.main-tab').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      switchTab(btn.dataset.tab);
+    });
+  });
+}
+
+/* 측정(폭 계산)이 들어가는 초기화는 전부 여기 모아둡니다. 이
+   함수들은 반드시 내용이 실제로 화면에 보이는(잠금 해제된) 상태
+   에서만 실행해야 합니다 - 숨겨진(display:none) 상태에서 실행하면
+   전부 0으로 측정되고, 그 값이 인라인 스타일로 굳어버려서 나중에
+   다시 계산해도 표가 찌그러진 채로 남기 때문입니다. */
+function initAppAfterUnlock() {
+  loadAllTableColWidths();
+  initAutoGrow();
+  initSplitRows();
+  initArrowNav();
+  initProjectColumnWatchers();
+  initRequestSyncTabs();
+  initRequestToContractSync();
+  initProjectNameToItemSync();
+  initProjectToRecipientSync();
+  initProjectNamePlaceholderDefaults();
+  initFileUpload();
+  layoutProjectColumns();
+  layoutRow1Columns();
+  layoutProgressColumns();
+  layoutPriorColumns();
+  layoutContractColumns();
+  alignRequestColumns();
+
+  renderSavedList();
+  initSharedStorage();
+  initSavedSearch();
+
+  initMainTabs();
+  initExpenseTab();
+}
+
+function initSavedSearch() {
+  const input = document.getElementById('savedSearchInput');
+  if (!input || input.dataset.bound) return;
+  input.dataset.bound = '1';
+  input.addEventListener('input', function() {
+    if (currentTab === 'tax') {
+      renderSavedList();
+    } else {
+      renderExpenseSavedList();
+    }
+  });
+}
+
+/* ── 좌우 패널(저장된 목록 / 첨부파일 미리보기) 너비를 마우스로
+   드래그해서 조절 ─────────────────────────────────────────
+   너비는 CSS 변수(--saved-w, --upload-w)로 관리하고, 가운데 서식
+   본문(body padding)도 같은 변수를 참조하므로 패널 너비를 바꾸면
+   본문 위치도 자동으로 다시 정렬됩니다. 마지막으로 조절한 너비는
+   이 브라우저에 기억해둡니다(1700px 이하 좁은 화면에서는 패널이
+   위/아래로 쌓이는 레이아웃으로 바뀌므로 드래그 기능을 쓰지
+   않습니다). */
+const PANEL_WIDTH_KEY = 'taxInvoiceRequestForm_panelWidths_v1';
+const SAVED_PANEL_MIN = 220;
+const SAVED_PANEL_MAX = 640;
+const UPLOAD_PANEL_MIN = 300;
+const UPLOAD_PANEL_MAX = 960;
+const CENTER_SHEET_MIN = 520;
+
+function getPanelWidthPx(varName, fallback) {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(varName);
+  const n = parseFloat(raw);
+  return isNaN(n) ? fallback : n;
+}
+
+function setPanelWidthPx(varName, px) {
+  document.documentElement.style.setProperty(varName, px + 'px');
+}
+
+function restorePanelWidths() {
+  try {
+    const raw = localStorage.getItem(PANEL_WIDTH_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.saved) setPanelWidthPx('--saved-w', data.saved);
+    if (data.upload) setPanelWidthPx('--upload-w', data.upload);
+  } catch (e) {}
+}
+
+function savePanelWidths() {
+  try {
+    localStorage.setItem(PANEL_WIDTH_KEY, JSON.stringify({
+      saved: getPanelWidthPx('--saved-w', 300),
+      upload: getPanelWidthPx('--upload-w', 480)
+    }));
+  } catch (e) {}
+}
+
+function clampNum(n, min, max) {
+  return Math.max(min, Math.min(max, n));
+}
+
+function initPanelResizeHandle(handle, varName, min, max, otherVarName, computeWidth) {
+  if (!handle) return;
+  handle.addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    handle.classList.add('dragging');
+    document.body.style.userSelect = 'none';
+
+    function onMove(ev) {
+      const otherW = getPanelWidthPx(otherVarName, 0);
+      const maxAllowed = Math.max(min, Math.min(max, window.innerWidth - CENTER_SHEET_MIN - otherW));
+      const w = clampNum(computeWidth(ev.clientX), min, maxAllowed);
+      setPanelWidthPx(varName, w);
+    }
+
+    function onUp() {
+      handle.classList.remove('dragging');
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      savePanelWidths();
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
+function initPanelResize() {
+  initPanelResizeHandle(
+    document.getElementById('savedResizeHandle'), '--saved-w',
+    SAVED_PANEL_MIN, SAVED_PANEL_MAX, '--upload-w',
+    function(clientX) { return clientX - 22; }
+  );
+  initPanelResizeHandle(
+    document.getElementById('uploadResizeHandle'), '--upload-w',
+    UPLOAD_PANEL_MIN, UPLOAD_PANEL_MAX, '--saved-w',
+    function(clientX) { return window.innerWidth - clientX - 22; }
+  );
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  restorePanelWidths();
+  initPanelResize();
+  initPasswordGate();
+});
+
+window.addEventListener('resize', function() {
+  if (document.body.classList.contains('pw-locked')) return;
+  layoutAllSplitRows();
+  layoutProjectColumns();
+  layoutRow1Columns();
+  layoutProgressColumns();
+  layoutPriorColumns();
+  alignRequestColumns();
+});
+</script>
+
+</body>
+</html>
