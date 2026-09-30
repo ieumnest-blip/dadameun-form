@@ -123,6 +123,74 @@
     }
   }
 
+  /* 저장 버튼을 눌렀을 때, 이미 불러와져 있는 저장 항목이 있으면
+     "덮어쓰기 / 새로 저장 / 취소"를 물어보는 작은 확인창입니다. */
+  .save-choice-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 600;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .save-choice-overlay.open {
+    display: flex;
+  }
+
+  .save-choice-box {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.3);
+    padding: 22px 24px;
+    width: 360px;
+    max-width: 90vw;
+  }
+
+  .save-choice-msg {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #222;
+    white-space: pre-line;
+    margin-bottom: 18px;
+  }
+
+  .save-choice-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .save-choice-buttons button {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    background: #f2f2f2;
+    cursor: pointer;
+  }
+
+  .save-choice-overwrite {
+    background: #2e7d32 !important;
+    border-color: #2e7d32 !important;
+    color: #fff !important;
+  }
+
+  .save-choice-new {
+    background: #1565c0 !important;
+    border-color: #1565c0 !important;
+    color: #fff !important;
+  }
+
+  @media print {
+    .save-choice-overlay {
+      display: none !important;
+    }
+  }
+
   .section-title {
     font-size: 13px;
     font-weight: 700;
@@ -341,7 +409,9 @@
     text-align: center;
   }
 
-  .request-amt input {
+  .request-amt input,
+  .request-amt textarea,
+  .payment-row textarea {
     color: #7030a0;
     font-weight: 700;
   }
@@ -398,6 +468,10 @@
 
   .prior-box .info th {
     height: 39px;
+  }
+
+  .prior-box .info th[title] {
+    cursor: help;
   }
 
   .prior-box .info td {
@@ -1139,6 +1213,45 @@
     opacity: 1;
   }
 
+  /* 발행 신청 정보의 금액을 기 발행정보로 반영하는 버튼 - 평소(화면
+     캡쳐할 때)에는 안 보이다가, 제목 줄에 마우스를 올렸을 때만
+     나타납니다. */
+  .request-title-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .move-to-prior-btn {
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    background: #ff0000;
+    border: 1px solid #ff0000;
+    border-radius: 4px;
+    padding: 3px 9px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .12s;
+  }
+
+  .move-to-prior-btn:hover {
+    background: #d40000;
+  }
+
+  .request-title-row:hover .move-to-prior-btn,
+  .move-to-prior-btn:focus {
+    opacity: 1;
+  }
+
+  @media print {
+    .move-to-prior-btn {
+      display: none !important;
+    }
+  }
+
   .expense-toolbar-row .accent-color-box {
     margin-bottom: 0;
   }
@@ -1298,6 +1411,17 @@
   <div class="help-modal-body" id="helpModalBody"></div>
 </div>
 
+<div class="save-choice-overlay" id="saveChoiceOverlay">
+  <div class="save-choice-box">
+    <div class="save-choice-msg" id="saveChoiceMsg"></div>
+    <div class="save-choice-buttons">
+      <button type="button" class="save-choice-overwrite" id="saveChoiceOverwrite">덮어쓰기</button>
+      <button type="button" class="save-choice-new" id="saveChoiceNew">새로 저장</button>
+      <button type="button" class="save-choice-cancel" id="saveChoiceCancel">취소</button>
+    </div>
+  </div>
+</div>
+
 <div class="saved-panel">
   <div class="saved-panel-title" id="savedPanelTitle">저장된 목록 (확인 중...)</div>
   <input type="text" id="savedSearchInput" class="saved-search-input" placeholder="🔍 검색 (이름/메모)">
@@ -1448,7 +1572,7 @@
             <td class="check-cell"><input type="checkbox" name="progress" data-field="progress1" checked></td>
             <td class="check-cell"><input type="checkbox" name="progress" data-field="progress2"></td>
             <td class="check-cell"><input type="checkbox" name="progress" data-field="progress3"></td>
-            <td><input type="text" data-field="completionDate" placeholder="YY.MM.DD"></td>
+            <td><input type="text" data-field="completionDate"></td>
           </tr>
         </table>
       </td>
@@ -1473,21 +1597,23 @@
         <th>공급가액</th>
         <th>부가세</th>
         <th>합 계</th>
-        <th>비 고</th>
+        <th title="예) 세금계산서 발행 완료">비 고</th>
       </tr>
       <tr>
         <td><input type="text" data-role="supply" data-field="priorSupply" placeholder="0"></td>
         <td><input type="text" data-role="vat" data-field="priorVat" placeholder="0"></td>
         <td><input type="text" data-role="total" data-field="priorTotal" placeholder="0" readonly></td>
         <td>
-          <textarea class="left auto-grow" rows="1" data-role="remark" data-field="priorRemark"
-            placeholder="예) 세금계산서 발행 완료"></textarea>
+          <textarea class="left auto-grow" rows="1" data-role="remark" data-field="priorRemark"></textarea>
         </td>
       </tr>
     </table>
   </div>
 
-  <div class="section-title request">[  발행 신청 정보  ]</div>
+  <div class="section-title request request-title-row">
+    [  발행 신청 정보  ]
+    <button type="button" class="move-to-prior-btn" id="moveToPriorBtn">기 발행정보로 반영</button>
+  </div>
 
   <div class="request-box" style="position: relative;">
     <table class="info request-table">
@@ -1821,6 +1947,20 @@ function initAutoGrow() {
     autoGrow(el);
     el.addEventListener('input', function() { autoGrow(el); });
     el.addEventListener('change', function() { autoGrow(el); });
+  });
+}
+
+/* ── 프로젝트 정보 - 엔터로 줄바꿈되지 않도록 ─────────────────────
+   "프로젝트 정보" 표 안의 입력칸(공급자/상호/사업자번호/수신메일 등
+   textarea 포함)은 내용이 길어지면 가로로만 늘어나거나 잘리게 하고,
+   엔터 키를 눌러도 줄바꿈이 생기지 않도록 막습니다. */
+function initProjectInfoNoEnter() {
+  document.querySelectorAll('.project-table input, .project-table textarea').forEach(function(el) {
+    el.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+      }
+    });
   });
 }
 
@@ -2314,6 +2454,43 @@ function initRequestToContractSync() {
     contractVat.value = reqVat.value;
     contractVat.dispatchEvent(new Event('input', { bubbles: true }));
   });
+}
+
+/* ── 발행 신청 정보 금액 → 기 발행정보로 반영 ──────────────────────
+   버튼을 누르면 발행 신청 정보의 공급가액/부가세를 기 발행정보의
+   기존 금액에 더하고(기 발행정보는 "이전 발행 내역합산"이므로 누적),
+   발행 신청 정보의 금액 칸은 다음 발행을 위해 비웁니다. 계약금액
+   칸은 건드리지 않습니다. */
+function moveRequestAmountsToPrior() {
+  const reqSupply = document.querySelector('[data-field="requestSupply"]');
+  const reqVat = document.querySelector('[data-field="requestVat"]');
+  const priorSupply = document.querySelector('[data-field="priorSupply"]');
+  const priorVat = document.querySelector('[data-field="priorVat"]');
+  if (!reqSupply || !reqVat || !priorSupply || !priorVat) return;
+
+  const addSupply = parseNum(reqSupply.value);
+  const addVat = reqVat.value.trim() === '' ? Math.round(addSupply * 0.1) : parseNum(reqVat.value);
+
+  if (!addSupply && !addVat) {
+    alert('발행 신청 정보에 반영할 금액이 없습니다.');
+    return;
+  }
+
+  priorSupply.value = fmt(parseNum(priorSupply.value) + addSupply);
+  priorVat.value = fmt(parseNum(priorVat.value) + addVat);
+  priorVat.dataset.touched = '1';
+
+  reqSupply.value = '';
+  reqVat.value = '';
+  reqVat.dataset.touched = '';
+
+  recalcAllRows();
+  showStatus('발행 신청 정보 금액을 기 발행정보에 반영했습니다.');
+}
+
+function initMoveRequestToPrior() {
+  const btn = document.getElementById('moveToPriorBtn');
+  if (btn) btn.addEventListener('click', moveRequestAmountsToPrior);
 }
 
 /* ── 프로젝트명 → 품목 자동 반영 ──────────────────────────────────
@@ -2834,6 +3011,13 @@ async function mutateSavedList(mutateFn) {
 
 let editingSavedItemId = null;
 
+/* 저장 버튼을 눌렀을 때 "덮어쓸지/새로 저장할지" 물어봐야 하는 기준이
+   되는, 현재 화면에 불러와져 있는 저장 항목의 id 입니다(세금계산서/
+   지출결의서 각각 따로 관리). 목록에서 항목을 클릭해 불러오면
+   설정되고, 초기화하거나 그 항목이 삭제되면 다시 비웁니다. */
+let loadedSavedItemId = null;
+let loadedExpenseSavedItemId = null;
+
 function getSavedSearchTerm() {
   const input = document.getElementById('savedSearchInput');
   return input ? input.value.trim().toLowerCase() : '';
@@ -2888,6 +3072,7 @@ function renderSavedList() {
     btn.title = item.label + (item.memo ? ('\n' + item.memo) : '');
     btn.addEventListener('click', function() {
       restoreFormData(item.data);
+      loadedSavedItemId = item.id;
       const nameInput = document.getElementById('saveNameInput');
       const memoInput = document.getElementById('saveMemoInput');
       if (nameInput) nameInput.value = item.label || '';
@@ -2923,6 +3108,7 @@ function renderSavedList() {
           del.disabled = false;
           return;
         }
+        if (loadedSavedItemId === item.id) loadedSavedItemId = null;
         if (result.fellBack) {
           showStatus('공유 저장소에 연결할 수 없어 이 기기에만 저장되었습니다.');
         }
@@ -3020,18 +3206,47 @@ async function saveForm() {
   const memoInputEl = document.getElementById('saveMemoInput');
   const memo = memoInputEl ? memoInputEl.value.trim() : '';
 
+  // 이미 불러와져 있는 저장 항목이 있으면(그리고 아직 목록에 실제로
+  // 남아있으면) 덮어쓸지 새로 저장할지 먼저 물어봅니다.
+  const existing = loadedSavedItemId
+    ? getSavedList().find(function(x) { return x.id === loadedSavedItemId; })
+    : null;
+
+  let choice = 'new';
+  if (existing) {
+    choice = await askSaveChoice(existing.label);
+    if (choice === 'cancel') return;
+  }
+
   showStatus('저장 중...');
 
-  const result = await mutateSavedList(function(list) {
-    const newItem = {
-      id: Date.now(),
-      label: label,
-      memo: memo,
-      time: new Date().toLocaleString('ko-KR'),
-      data: data
-    };
-    return [newItem].concat(list);
-  });
+  let result;
+  if (choice === 'overwrite') {
+    result = await mutateSavedList(function(list) {
+      return list.map(function(x) {
+        if (x.id !== existing.id) return x;
+        return Object.assign({}, x, {
+          label: label,
+          memo: memo,
+          time: new Date().toLocaleString('ko-KR'),
+          data: data
+        });
+      });
+    });
+  } else {
+    const newId = Date.now();
+    result = await mutateSavedList(function(list) {
+      const newItem = {
+        id: newId,
+        label: label,
+        memo: memo,
+        time: new Date().toLocaleString('ko-KR'),
+        data: data
+      };
+      return [newItem].concat(list);
+    });
+    if (result.ok) loadedSavedItemId = newId;
+  }
 
   if (!result.ok) {
     showStatus('저장에 실패했습니다. 다시 시도해주세요.');
@@ -3043,11 +3258,13 @@ async function saveForm() {
   if (memoInputEl) memoInputEl.value = '';
   showStatus(result.fellBack
     ? '"' + label + '" 이 기기에 저장되었습니다. (공유 저장소 연결 실패)'
-    : '"' + label + '" 저장되었습니다.');
+    : (choice === 'overwrite' ? '"' + label + '" 덮어썼습니다.' : '"' + label + '" 저장되었습니다.'));
 }
 
 function resetForm() {
   if (!confirm('입력한 내용을 모두 초기화할까요?')) return;
+
+  loadedSavedItemId = null;
 
   document.querySelectorAll('input[type="text"], textarea').forEach(function(el) {
     el.value = '';
@@ -3507,6 +3724,7 @@ function renderExpenseSavedList() {
     btn.title = item.label + (item.memo ? ('\n' + item.memo) : '');
     btn.addEventListener('click', function() {
       restoreExpenseData(item.data);
+      loadedExpenseSavedItemId = item.id;
       const nameInput = document.getElementById('saveNameInput');
       const memoInput = document.getElementById('saveMemoInput');
       if (nameInput) nameInput.value = item.label || '';
@@ -3542,6 +3760,7 @@ function renderExpenseSavedList() {
           del.disabled = false;
           return;
         }
+        if (loadedExpenseSavedItemId === item.id) loadedExpenseSavedItemId = null;
         if (result.fellBack) {
           showStatus('공유 저장소에 연결할 수 없어 이 기기에만 저장되었습니다.');
         }
@@ -3636,18 +3855,47 @@ async function saveExpenseForm() {
   const memoInputEl = document.getElementById('saveMemoInput');
   const memo = memoInputEl ? memoInputEl.value.trim() : '';
 
+  // 이미 불러와져 있는 저장 항목이 있으면(그리고 아직 목록에 실제로
+  // 남아있으면) 덮어쓸지 새로 저장할지 먼저 물어봅니다.
+  const existing = loadedExpenseSavedItemId
+    ? getExpenseSavedList().find(function(x) { return x.id === loadedExpenseSavedItemId; })
+    : null;
+
+  let choice = 'new';
+  if (existing) {
+    choice = await askSaveChoice(existing.label);
+    if (choice === 'cancel') return;
+  }
+
   showStatus('저장 중...');
 
-  const result = await mutateExpenseSavedList(function(list) {
-    const newItem = {
-      id: Date.now(),
-      label: label,
-      memo: memo,
-      time: new Date().toLocaleString('ko-KR'),
-      data: data
-    };
-    return [newItem].concat(list);
-  });
+  let result;
+  if (choice === 'overwrite') {
+    result = await mutateExpenseSavedList(function(list) {
+      return list.map(function(x) {
+        if (x.id !== existing.id) return x;
+        return Object.assign({}, x, {
+          label: label,
+          memo: memo,
+          time: new Date().toLocaleString('ko-KR'),
+          data: data
+        });
+      });
+    });
+  } else {
+    const newId = Date.now();
+    result = await mutateExpenseSavedList(function(list) {
+      const newItem = {
+        id: newId,
+        label: label,
+        memo: memo,
+        time: new Date().toLocaleString('ko-KR'),
+        data: data
+      };
+      return [newItem].concat(list);
+    });
+    if (result.ok) loadedExpenseSavedItemId = newId;
+  }
 
   if (!result.ok) {
     showStatus('저장에 실패했습니다. 다시 시도해주세요.');
@@ -3659,11 +3907,12 @@ async function saveExpenseForm() {
   if (memoInputEl) memoInputEl.value = '';
   showStatus(result.fellBack
     ? '"' + label + '" 이 기기에 저장되었습니다. (공유 저장소 연결 실패)'
-    : '"' + label + '" 저장되었습니다.');
+    : (choice === 'overwrite' ? '"' + label + '" 덮어썼습니다.' : '"' + label + '" 저장되었습니다.'));
 }
 
 function resetExpenseForm() {
   if (!confirm('입력한 내용을 모두 초기화할까요?')) return;
+  loadedExpenseSavedItemId = null;
   document.getElementById('expenseRowsBody').innerHTML = '';
   addExpenseRow();
   document.querySelectorAll('#sheetExpense [data-xfield]').forEach(function(el) {
@@ -3907,11 +4156,13 @@ function initMainTabs() {
 function initAppAfterUnlock() {
   loadAllTableColWidths();
   initAutoGrow();
+  initProjectInfoNoEnter();
   initSplitRows();
   initArrowNav();
   initProjectColumnWatchers();
   initRequestSyncTabs();
   initRequestToContractSync();
+  initMoveRequestToPrior();
   initProjectNameToItemSync();
   initProjectToRecipientSync();
   initProjectNamePlaceholderDefaults();
@@ -4030,6 +4281,47 @@ function initHelpModal() {
 
   document.addEventListener('mouseup', function() {
     dragging = false;
+  });
+}
+
+/* ── 저장 시 "덮어쓰기 / 새로 저장 / 취소" 확인창 ───────────────────
+   이미 불러와져 있는 저장 항목이 있는 상태에서 저장 버튼을 누르면,
+   그 항목을 그대로 덮어쓸지 별도의 새 항목으로 저장할지 물어봅니다.
+   Promise가 'overwrite' / 'new' / 'cancel' 중 하나로 완료됩니다. */
+function askSaveChoice(label) {
+  return new Promise(function(resolve) {
+    const overlay = document.getElementById('saveChoiceOverlay');
+    const msg = document.getElementById('saveChoiceMsg');
+    const overwriteBtn = document.getElementById('saveChoiceOverwrite');
+    const newBtn = document.getElementById('saveChoiceNew');
+    const cancelBtn = document.getElementById('saveChoiceCancel');
+    if (!overlay || !msg || !overwriteBtn || !newBtn || !cancelBtn) {
+      resolve('new');
+      return;
+    }
+
+    msg.textContent = '"' + label + '"은(는) 이미 불러온 저장 항목입니다.\n어떻게 저장할까요?';
+    overlay.classList.add('open');
+
+    function cleanup(result) {
+      overlay.classList.remove('open');
+      overwriteBtn.removeEventListener('click', onOverwrite);
+      newBtn.removeEventListener('click', onNew);
+      cancelBtn.removeEventListener('click', onCancel);
+      overlay.removeEventListener('click', onOverlayClick);
+      resolve(result);
+    }
+    function onOverwrite() { cleanup('overwrite'); }
+    function onNew() { cleanup('new'); }
+    function onCancel() { cleanup('cancel'); }
+    function onOverlayClick(e) {
+      if (e.target === overlay) cleanup('cancel');
+    }
+
+    overwriteBtn.addEventListener('click', onOverwrite);
+    newBtn.addEventListener('click', onNew);
+    cancelBtn.addEventListener('click', onCancel);
+    overlay.addEventListener('click', onOverlayClick);
   });
 }
 
