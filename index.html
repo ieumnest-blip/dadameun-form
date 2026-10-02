@@ -1544,7 +1544,7 @@
           <tr class="amount-value">
             <td><input type="text" data-role="supply" data-field="contractSupply" placeholder="0"></td>
             <td><input type="text" data-role="vat" data-field="contractVat" placeholder="0"></td>
-            <td><input type="text" data-role="total" data-field="contractTotal" placeholder="0" readonly></td>
+            <td><input type="text" data-role="total" data-field="contractTotal" placeholder="0"></td>
             <td><textarea class="left auto-grow" rows="1" data-role="remark" data-field="contractRemark"></textarea></td>
           </tr>
         </table>
@@ -1602,7 +1602,7 @@
       <tr>
         <td><input type="text" data-role="supply" data-field="priorSupply" placeholder="0"></td>
         <td><input type="text" data-role="vat" data-field="priorVat" placeholder="0"></td>
-        <td><input type="text" data-role="total" data-field="priorTotal" placeholder="0" readonly></td>
+        <td><input type="text" data-role="total" data-field="priorTotal" placeholder="0"></td>
         <td>
           <textarea class="left auto-grow" rows="1" data-role="remark" data-field="priorRemark"></textarea>
         </td>
@@ -1647,7 +1647,7 @@
           <input type="text" data-role="vat" data-field="requestVat" placeholder="0">
         </td>
         <td class="request-amt">
-          <input type="text" data-role="total" data-field="requestTotal" placeholder="0" readonly>
+          <input type="text" data-role="total" data-field="requestTotal" placeholder="0">
         </td>
       </tr>
 
@@ -2886,6 +2886,32 @@ document.querySelectorAll('.amount-row').forEach(function(row) {
   vat.addEventListener('blur', function() {
     const v = parseNum(vat.value);
     vat.value = vat.value.trim() === '' ? '' : fmt(v);
+  });
+
+  // 합계를 직접 입력하면 반대로 공급가액/부가세를 역산해서 채워줍니다
+  // (공급가액 = 합계 ÷ 1.1, 부가세 = 합계 - 공급가액). 입력 중에 합계
+  // 칸 자체를 다시 포맷하면 커서가 튀므로, 합계 칸은 그대로 두고
+  // 공급가액/부가세 칸만 즉시 채워줍니다.
+  total.addEventListener('input', function() {
+    if (total.value.trim() === '') {
+      supply.value = '';
+      vat.value = '';
+      vat.dataset.touched = '';
+      return;
+    }
+
+    const t = parseNum(total.value);
+    const s = Math.round(t / 1.1);
+    const v = t - s;
+
+    supply.value = fmt(s);
+    vat.value = fmt(v);
+    vat.dataset.touched = '1';
+  });
+
+  total.addEventListener('blur', function() {
+    const t = parseNum(total.value);
+    total.value = total.value.trim() === '' ? '' : fmt(t);
   });
 
   recalc();
