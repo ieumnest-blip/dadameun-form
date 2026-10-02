@@ -2222,6 +2222,15 @@ function bindResizeHandle(handle, table, cols, idx, key, onChange) {
     document.body.style.userSelect = 'none';
 
     function onMove(ev) {
+      // 드래그 중 마우스 버튼을 뗐는데도(예: 다른 창/iframe 위에서 뗀 경우)
+      // mouseup 이벤트를 못 받는 경우가 있어, 버튼이 눌려있지 않으면
+      // 바로 드래그를 끝냅니다. 이게 없으면 버튼을 떼도 선이 계속
+      // 마우스를 따라오게 됩니다.
+      if (ev.buttons === 0) {
+        onUp();
+        return;
+      }
+
       const dx = ev.clientX - startX;
       let newLeft = startLeftW + dx;
       let newRight = startRightW - dx;
@@ -2238,6 +2247,7 @@ function bindResizeHandle(handle, table, cols, idx, key, onChange) {
       document.body.style.userSelect = '';
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
+      window.removeEventListener('blur', onUp);
       allTableColWidths[key] = colWidthsPx(cols);
       saveAllTableColWidths();
       if (onChange) onChange();
@@ -2245,6 +2255,7 @@ function bindResizeHandle(handle, table, cols, idx, key, onChange) {
 
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
+    window.addEventListener('blur', onUp);
   });
 }
 
@@ -4299,6 +4310,12 @@ function initHelpModal() {
 
   document.addEventListener('mousemove', function(e) {
     if (!dragging) return;
+    // 다른 창/iframe 위에서 마우스 버튼을 떼면 mouseup을 못 받을 수
+    // 있어, 버튼이 눌려있지 않으면 바로 드래그를 끝냅니다.
+    if (e.buttons === 0) {
+      dragging = false;
+      return;
+    }
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
     modal.style.left = (startLeft + dx) + 'px';
@@ -4306,6 +4323,10 @@ function initHelpModal() {
   });
 
   document.addEventListener('mouseup', function() {
+    dragging = false;
+  });
+
+  window.addEventListener('blur', function() {
     dragging = false;
   });
 }
@@ -4407,6 +4428,13 @@ function initPanelResizeHandle(handle, varName, min, max, otherVarName, computeW
     document.body.style.userSelect = 'none';
 
     function onMove(ev) {
+      // 다른 창/iframe 위에서 마우스 버튼을 떼면 mouseup을 못 받을 수
+      // 있어, 버튼이 눌려있지 않으면 바로 드래그를 끝냅니다.
+      if (ev.buttons === 0) {
+        onUp();
+        return;
+      }
+
       const otherW = getPanelWidthPx(otherVarName, 0);
       const maxAllowed = Math.max(min, Math.min(max, window.innerWidth - CENTER_SHEET_MIN - otherW));
       const w = clampNum(computeWidth(ev.clientX), min, maxAllowed);
@@ -4418,11 +4446,13 @@ function initPanelResizeHandle(handle, varName, min, max, otherVarName, computeW
       document.body.style.userSelect = '';
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
+      window.removeEventListener('blur', onUp);
       savePanelWidths();
     }
 
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
+    window.addEventListener('blur', onUp);
   });
 }
 
