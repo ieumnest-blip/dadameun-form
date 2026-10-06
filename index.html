@@ -2549,21 +2549,30 @@ function initProjectNamePlaceholderDefaults() {
 
 function syncProjectNameToItem() {
   const item = document.querySelector('[data-field="requestItem"]');
-  if (!item || item.dataset.touched) return;
+  if (!item) return;
+  if (item.dataset.touched) {
+    console.log('[품목자동반영] 건너뜀 (touched=1, 현재 품목값=' + JSON.stringify(item.value) + ')');
+    return;
+  }
 
   const parts = getProjectNameInputs()
     .map(function(inp) { return inp.value; })
     .filter(function(v) { return v && v.trim() !== ''; });
   item.value = parts.join(' ');
   autoGrow(item);
+  console.log('[품목자동반영] 반영함 → ' + JSON.stringify(item.value));
 }
 
 function initProjectNameToItemSync() {
   const item = document.querySelector('[data-field="requestItem"]');
   const inputs = getProjectNameInputs();
+  console.log('[품목자동반영] 초기화 - item 찾음=' + !!item + ', 프로젝트명 칸 개수=' + inputs.length);
   if (!item || !inputs.length) return;
 
-  item.addEventListener('input', function() { item.dataset.touched = '1'; });
+  item.addEventListener('input', function() {
+    item.dataset.touched = '1';
+    console.log('[품목자동반영] 품목칸 직접수정 감지 → touched=1');
+  });
 
   inputs.forEach(function(el) {
     el.addEventListener('input', syncProjectNameToItem);
@@ -2965,11 +2974,29 @@ function restoreFormData(data) {
       if (el.dataset.role === 'vat' && data[key] !== '') {
         el.dataset.touched = '1';
       }
-      if ((key === 'requestItem' || key === 'recipientName2') && data[key] !== '') {
+      if (key === 'recipientName2' && data[key] !== '') {
         el.dataset.touched = '1';
       }
     }
   });
+
+  // 품목(발행 신청 정보) 칸은, 불러온 값이 프로젝트명을 그대로 이어붙인
+  // 값과 같다면("자동 반영"된 상태 그대로 저장된 경우) 계속 자동
+  // 반영되도록 touched를 풀어줍니다. 프로젝트명과 다르게 직접 수정해
+  // 저장했던 경우에는(사용자가 일부러 바꾼 값이므로) touched를 그대로
+  // 유지해서 덮어쓰지 않습니다.
+  const requestItemEl = document.querySelector('[data-field="requestItem"]');
+  if (requestItemEl) {
+    const normalize = function(s) { return (s || '').replace(/\s+/g, ' ').trim(); };
+    const autoVal = getProjectNameInputs()
+      .map(function(inp) { return inp.value; })
+      .filter(function(v) { return v && v.trim() !== ''; })
+      .join(' ');
+    const isCustomized = normalize(requestItemEl.value) !== '' && normalize(requestItemEl.value) !== normalize(autoVal);
+    requestItemEl.dataset.touched = isCustomized ? '1' : '';
+    console.log('[불러오기] 품목값=' + JSON.stringify(requestItemEl.value) + ' / 프로젝트명조합=' + JSON.stringify(autoVal) + ' / touched=' + JSON.stringify(requestItemEl.dataset.touched));
+  }
+
   setRequestSyncMode(getRequestSyncMode());
   autoGrowAll();
   layoutAllSplitRows();
