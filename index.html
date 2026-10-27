@@ -2001,6 +2001,8 @@ function initAutoGrow() {
    엔터 키를 눌러도 줄바꿈이 생기지 않도록 막습니다. */
 function initProjectInfoNoEnter() {
   document.querySelectorAll('.project-table input, .project-table textarea').forEach(function(el) {
+    // 수신메일 칸은 여러 줄(주소 여러 개)을 적을 수 있도록 Enter 줄바꿈을 허용합니다.
+    if (el.dataset.field === 'email') return;
     el.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -2104,7 +2106,10 @@ function layoutProjectColumns() {
 
   // 수신메일은 c4+c5를 합친 영역이므로, 부족하면 c5쪽에 더해줍니다.
   const emailText = emailEl ? (emailEl.value || emailEl.placeholder || '') : '';
-  const emailNeeded = measureTextWidth(emailText, normalFont) + pad;
+  // 줄바꿈이 있으면 가장 긴 줄 기준으로 폭을 잡습니다.
+  const emailNeeded = emailText.split('\n').reduce(function(max, line) {
+    return Math.max(max, measureTextWidth(line, normalFont));
+  }, 0) + pad;
   if (emailNeeded > c4w + c5w) {
     c5w += (emailNeeded - (c4w + c5w));
   }
